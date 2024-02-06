@@ -4,7 +4,7 @@ import dk.dmp.vanda.hydro.Station;
 import dk.dmp.vanda.hydro.WaterLevelMeasurement;
 
 import java.io.IOException;
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 import java.util.Iterator;
 
 /**
@@ -15,109 +15,112 @@ public interface HydrometryService {
      * Get stations
      * @return a stations request builder.
      */
-    StationsRequest stations();
+    GetStationsOperation getStations();
 
     /**
      * Get water level measurements.
      * @return a water-levels request builder.
      */
-    WaterLevelsRequest waterLevels();
+    GetWaterLevelsOperation getWaterLevels();
 
     /**
-     * Build a request for the {@link #stations()} operation.
+     * Build a request for the {@link #getStations()} operation.
      */
-    interface StationsRequest
+    interface GetStationsOperation
     {
         /**
          * Perform the request.
          * @return The stations fulfilling all conditions of the request.
          */
-        Iterator<Station> get() throws IOException;
+        Iterator<Station> exec() throws IOException;
 
         /**
          * Query by station ID.
          */
-        StationsRequest withStationId(String stationId);
+        GetStationsOperation stationId(String stationId);
 
         /**
          * Query by station ID as known by the operator of the station.
          * This is normally 6 or 8 digits.
          */
-        StationsRequest withOperatorStationId(String operatorStationId);
+        GetStationsOperation operatorStationId(String operatorStationId);
 
         /**
          * Query by CVR number of station owner, in DK12345678 format.
          */
-        StationsRequest withStationOwnerCvr(String stationOwnerCvr);
+        GetStationsOperation stationOwnerCvr(String stationOwnerCvr);
 
         /**
          * Query by CVR number of station operator, in DK12345678 format.
          */
-        StationsRequest withOperatorCvr(String operatorCvr);
+        GetStationsOperation operatorCvr(String operatorCvr);
 
         /**
          * Query by measured parameter as stancode.
          */
-        StationsRequest withParameterSc(int parameterSc);
+        GetStationsOperation parameterSc(int parameterSc);
 
         /**
          * Query by examination type as stancode.
          */
-        StationsRequest withExaminationTypeSc(int examinationTypeSc);
+        GetStationsOperation examinationTypeSc(int examinationTypeSc);
 
         /**
          * Filter the results after a point in time.
+         * Note that components after minute are ignored.
          */
-        StationsRequest withResultsAfter(ZonedDateTime pointInTime);
+        GetStationsOperation withResultsAfter(OffsetDateTime pointInTime);
     }
 
     /**
-     * Request for the {@link #waterLevels()} operation.
-     * {@linkplain #withStationId(String) Station ID} or
-     * {@linkplain #withOperatorStationId(String) operator station ID}
+     * Request for the {@link #getWaterLevels()} operation.
+     * {@linkplain #stationId(String) Station ID} or
+     * {@linkplain #operatorStationId(String) operator station ID}
      * must be specified.
      */
-    interface WaterLevelsRequest
+    interface GetWaterLevelsOperation
     {
         /**
          * Perform the request.
          * Returns the current results, i.e. no overwritten history.
          * @return The measurements fulfilling all conditions of the request.
          */
-        Iterator<WaterLevelMeasurement> get() throws IOException;
+        Iterator<WaterLevelMeasurement> exec() throws IOException;
 
         /**
          * Query by station ID.
          */
-        WaterLevelsRequest withStationId(String stationId);
+        GetWaterLevelsOperation stationId(String stationId);
 
         /**
          * Query by station ID as known by the operator of the station.
          */
-        WaterLevelsRequest withOperatorStationId(String operatorStationId);
+        GetWaterLevelsOperation operatorStationId(String operatorStationId);
 
         /**
          * Query by measurement point.
          * If not specified, return data for all measurement points.
          */
-        WaterLevelsRequest withMeasurementPointNumber(int measurementPointNumber);
+        GetWaterLevelsOperation measurementPointNumber(int measurementPointNumber);
 
         /**
          * Query from the given timestamp.
-         * Both {@linkplain #from(ZonedDateTime) from} and
-         * {@linkplain #to(ZonedDateTime) to} must be specified if one
+         * Both {@linkplain #from(OffsetDateTime) from} and
+         * {@linkplain #to(OffsetDateTime) to} must be specified if one
          * of them is present.
+         * Note that components after minute are ignored.
          * If not specified, return data for the last 24 hours.
          */
-        WaterLevelsRequest from(ZonedDateTime pointInTime);
+        GetWaterLevelsOperation from(OffsetDateTime pointInTime);
 
         /**
          * Query until the given timestamp.
-         * Both {@linkplain #from(ZonedDateTime) from} and
-         * {@linkplain #to(ZonedDateTime) to} must be specified if one
+         * Both {@linkplain #from(OffsetDateTime) from} and
+         * {@linkplain #to(OffsetDateTime) to} must be specified if one
          * of them is present.
+         * Note that components after minute are ignored.
          * If not specified, return data for the last 24 hours.
          */
-        WaterLevelsRequest to(ZonedDateTime pointInTime);
+        GetWaterLevelsOperation to(OffsetDateTime pointInTime);
     }
 }
