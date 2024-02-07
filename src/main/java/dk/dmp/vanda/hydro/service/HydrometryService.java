@@ -32,7 +32,7 @@ public interface HydrometryService {
          * Perform the request.
          * @return The stations fulfilling all conditions of the request.
          */
-        Iterator<Station> exec() throws IOException;
+        Iterator<Station> exec() throws IOException, InterruptedException;
 
         /**
          * Query by station ID.

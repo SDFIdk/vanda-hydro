@@ -5,20 +5,24 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 /**
  * The implementation is immutable, thus thread-safe.
- * However the operations builders are not.
+ * However, the operations builders are not.
  */
 public class HydrometryHttpService implements HydrometryService {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
@@ -75,58 +79,90 @@ public class HydrometryHttpService implements HydrometryService {
                     .parseStrict()
                     .toFormatter();
 
-    private class StationsHttpRequest implements GetStationsOperation {
-        private final QueryBuilder qb = new QueryBuilder("stations");
+    private class Operation<T> {
+        private final QueryBuilder qb;
 
-        @Override
-        public Iterator<Station> exec() throws IOException {
+        private Operation(String path) {
+            qb = new QueryBuilder(path);
+        }
+
+        /**
+         * Add a query parameter.
+         * @param parm Query parameter name.
+         * @param value Query parameter value.
+         */
+        protected void addQueryParameter(String parm, String value) {
+            qb.put(parm, value);
+        }
+
+        public Iterator<T> exec() throws IOException, InterruptedException {
+            URI endpoint;
             try {
-                URI endpoint = apiBase.resolve(qb.buildURI());
+                endpoint = apiBase.resolve(qb.buildURI());
             } catch (URISyntaxException e) {
                 throw new RuntimeException("Internal error, query parameters not properly validated.", e);
             }
+            HttpRequest req = HttpRequest.newBuilder(endpoint)
+                    .header("Accept", "application/json")
+                    .build();
+            HttpResponse<InputStream> response = httpClient.send(req, HttpResponse.BodyHandlers.ofInputStream());
+            ContentType contentType = ContentType.fromHttpResponse(response);
+            if (!contentType.getMediaType().orElse("").equalsIgnoreCase("application/json"))
+                log.debug("Unexpected media type, {}, in response from {}.", contentType.getMediaType(), response.uri());
+            Charset contentCharset = contentType.getCharset().orElse(StandardCharsets.UTF_8);
+            log.trace("Using charset: {}", contentCharset);
+            if (response.statusCode() != 200) {
+                throw new HttpResponseException(response);
+            }
+            log.trace("Response of {} as exception.", req.uri(), new HttpResponseException(response));
             return null;
+        }
+    }
+
+    private class StationsHttpRequest extends Operation<Station> implements GetStationsOperation {
+        public StationsHttpRequest() {
+            super("stations");
         }
 
         @Override
         public GetStationsOperation stationId(String stationId) {
-            qb.put("stationId", stationId);
+            addQueryParameter("stationId", stationId);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorStationId(String operatorStationId) {
-            qb.put("operatorStationId", operatorStationId);
+            addQueryParameter("operatorStationId", operatorStationId);
             return this;
         }
 
         @Override
         public GetStationsOperation stationOwnerCvr(String stationOwnerCvr) {
-            qb.put("stationOwnerCvr", stationOwnerCvr);
+            addQueryParameter("stationOwnerCvr", stationOwnerCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorCvr(String operatorCvr) {
-            qb.put("operatorCvr", operatorCvr);
+            addQueryParameter("operatorCvr", operatorCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation parameterSc(int parameterSc) {
-            qb.put("parameterSc", String.valueOf(parameterSc));
+            addQueryParameter("parameterSc", String.valueOf(parameterSc));
             return this;
         }
 
         @Override
         public GetStationsOperation examinationTypeSc(int examinationTypeSc) {
-            qb.put("examinationTypeSc", String.valueOf(examinationTypeSc));
+            addQueryParameter("examinationTypeSc", String.valueOf(examinationTypeSc));
             return this;
         }
 
         @Override
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
-            qb.put("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
+            addQueryParameter("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
             return this;
         }
     }
@@ -136,7 +172,7 @@ public class HydrometryHttpService implements HydrometryService {
      */
     private static class QueryBuilder {
         private final String path;
-        private final Map<String,String> parms = new LinkedHashMap<>(10);
+        private final Map<String,String> params = new LinkedHashMap<>(10);
 
         public QueryBuilder(String path) {
             this.path = path;
@@ -148,7 +184,7 @@ public class HydrometryHttpService implements HydrometryService {
          * @param value Query parameter value.
          */
         public void put(String parm, String value) {
-            parms.put(parm, value);
+            params.put(parm, value);
         }
 
         /**
@@ -157,8 +193,7 @@ public class HydrometryHttpService implements HydrometryService {
          * @throws URISyntaxException if the URI string constructed from the given components violates RFC 2396.
          */
         public URI buildURI() throws URISyntaxException {
-            String q = StreamSupport
-                    .stream(parms.entrySet().spliterator(), false)
+            String q = params.entrySet().stream()
                     .map(e -> e.getKey() + "=" + e.getValue())
                     .collect(Collectors.joining("&"));
             if (q.isEmpty()) q = null;
