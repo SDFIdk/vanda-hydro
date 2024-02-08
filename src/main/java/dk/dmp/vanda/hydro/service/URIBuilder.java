@@ -5,6 +5,7 @@ import java.net.URISyntaxException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -22,7 +23,7 @@ class URIBuilder {
      * @param path    Relative path to operation.
      */
     public URIBuilder(URI apiBase, String path) {
-        this.apiBase = apiBase;
+        this.apiBase = Objects.requireNonNull(apiBase, "apiBase missing");
         this.path = path;
     }
 
@@ -52,5 +53,9 @@ class URIBuilder {
 
     public URI buildURI() throws URISyntaxException {
         return apiBase.resolve(buildRelativeURI());
+    }
+
+    public String toString() {
+        return String.format("%s {apiBase: %s, path: %s, params: %s}", getClass().getName(), apiBase, path, params);
     }
 }
