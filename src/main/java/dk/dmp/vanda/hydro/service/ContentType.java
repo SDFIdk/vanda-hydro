@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
+import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.util.Optional;
@@ -32,23 +33,30 @@ class ContentType {
     }
 
     public static ContentType fromHttpResponse(HttpResponse<?> response) {
-        Optional<String> contentType = response.headers().firstValue("Content-Type");
-        log.trace("Interpreting Content-Type header content: {}", contentType);
-        String mediaType = null;
-        Charset charset = null;
-        if (contentType.isPresent()) {
-            String[] components = contentType.get().split(";");
-            if (components.length > 0) mediaType = components[0].trim();
-            if (components.length > 1) {
-                String[] charsetcomp = components[1].split("=");
-                if (charsetcomp.length > 1 && charsetcomp[0].trim().equalsIgnoreCase("charset")) {
-                    String charsetText = charsetcomp[1].trim();
-                    charset = Charset.forName(charsetText);
-                }
-            }
-        }
+        return fromHttpHeaders(response.headers());
+    }
+
+    public static ContentType fromHttpHeaders(HttpHeaders headers) {
+        Optional<String> contentType = headers.firstValue("Content-Type");
+        return contentType.map(ContentType::fromContentTypeHeaderValue)
+                .orElseGet(() -> new ContentType(null, null));
+    }
+
+    public static ContentType fromContentTypeHeaderValue(String headerValue) {
+        log.trace("Interpreting Content-Type value: {}", headerValue);
+        String[] components = headerValue.split(";");
+        String mediaType = components.length > 0 ? components[0].trim() : null;
+        Charset charset = components.length > 1 ? fromCharsetPartOfContentTypeValue(components[1]) : null;
         ContentType result = new ContentType(mediaType, charset);
-        log.trace("Decomposed Content-Type header: {}", result);
+        log.trace("Decomposed Content-Type value: {}", result);
         return result;
+    }
+
+    private static Charset fromCharsetPartOfContentTypeValue(String part) {
+        String[] charsetcomp = part.split("=");
+        if (charsetcomp.length > 1 && charsetcomp[0].trim().equalsIgnoreCase("charset")) {
+            String charsetText = charsetcomp[1].trim();
+            return Charset.forName(charsetText);
+        } else return null;
     }
 }
