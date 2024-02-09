@@ -7,6 +7,9 @@ import java.lang.invoke.MethodHandles;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
+import java.util.Arrays;
 import java.util.Optional;
 
 class ContentType {
@@ -15,9 +18,26 @@ class ContentType {
     private final String mediaType;
     private final Charset charset;
 
-    public ContentType(String mediaType, Charset charset) {
-        this.mediaType = mediaType;
-        this.charset = charset;
+    public ContentType(String headerValue) {
+        String[] components = headerValue.split(";");
+        mediaType = components[0].transform(s -> s.isBlank() ? null : s.trim());
+        charset = charsetFromContentTypeValueParameters(components);
+    }
+
+    private static Charset charsetFromContentTypeValueParameters(String[] parameters) {
+        Optional<String> value = Arrays.stream(parameters)
+                .skip(1) // First parameter is the media-type
+                .map(p -> p.split("=", 2))
+                .filter(p -> p[0].trim().equalsIgnoreCase("charset"))
+                .map(p -> p[1].trim())
+                .findAny();
+        try {
+            return value.map(Charset::forName)
+                    .orElse(null);
+        } catch(IllegalCharsetNameException | UnsupportedCharsetException e) {
+            log.debug("Cannot determine charset for \"{}\".", value.get(), e);
+            return null;
+        }
     }
 
     public Optional<String> getMediaType() {
@@ -32,31 +52,11 @@ class ContentType {
         return String.format("ContentType {mediaType: %s, charset: %s}", mediaType, charset);
     }
 
-    public static ContentType fromHttpResponse(HttpResponse<?> response) {
+    public static Optional<ContentType> fromHttpResponse(HttpResponse<?> response) {
         return fromHttpHeaders(response.headers());
     }
 
-    public static ContentType fromHttpHeaders(HttpHeaders headers) {
-        Optional<String> contentType = headers.firstValue("Content-Type");
-        return contentType.map(ContentType::fromContentTypeHeaderValue)
-                .orElseGet(() -> new ContentType(null, null));
-    }
-
-    public static ContentType fromContentTypeHeaderValue(String headerValue) {
-        log.trace("Interpreting Content-Type value: {}", headerValue);
-        String[] components = headerValue.split(";");
-        String mediaType = components.length > 0 ? components[0].trim() : null;
-        Charset charset = components.length > 1 ? fromCharsetPartOfContentTypeValue(components[1]) : null;
-        ContentType result = new ContentType(mediaType, charset);
-        log.trace("Decomposed Content-Type value: {}", result);
-        return result;
-    }
-
-    private static Charset fromCharsetPartOfContentTypeValue(String part) {
-        String[] charsetcomp = part.split("=");
-        if (charsetcomp.length > 1 && charsetcomp[0].trim().equalsIgnoreCase("charset")) {
-            String charsetText = charsetcomp[1].trim();
-            return Charset.forName(charsetText);
-        } else return null;
+    public static Optional<ContentType> fromHttpHeaders(HttpHeaders headers) {
+        return headers.firstValue("Content-Type").map(ContentType::new);
     }
 }

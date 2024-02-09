@@ -106,6 +106,7 @@ public class HydrometryHttpService implements HydrometryService {
             if (response.statusCode() != 200) {
                 throw new HttpResponseException(response);
             }
+            checkMediaType(response);
             Charset contentCharset = getCharset(response);
             return transformer.apply(response.body(), contentCharset);
         }
@@ -125,12 +126,17 @@ public class HydrometryHttpService implements HydrometryService {
             }
         }
 
+        private void checkMediaType(HttpResponse<?> response) {
+            Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
+            Optional<String> mediaType = contentType.flatMap(ContentType::getMediaType);
+            if (mediaType.isPresent() && ! mediaType.get().equalsIgnoreCase("application/json"))
+                log.debug("Unexpected media type, {}, in response from {}.", mediaType.get(), response.uri());
+        }
+
         private Charset getCharset(HttpResponse<?> response) {
-            ContentType contentType = ContentType.fromHttpResponse(response);
-            if (!contentType.getMediaType().orElse("").equalsIgnoreCase("application/json"))
-                log.debug("Unexpected media type, {}, in response from {}.", contentType.getMediaType(), response.uri());
-            Charset contentCharset = contentType.getCharset().orElse(StandardCharsets.UTF_8);
-            log.trace("Using charset: {}", contentCharset);
+            Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
+            Charset contentCharset = contentType.flatMap(ContentType::getCharset).orElse(StandardCharsets.UTF_8);
+            log.trace("Using charset {} for {}", contentCharset, response.uri());
             return contentCharset;
         }
     }

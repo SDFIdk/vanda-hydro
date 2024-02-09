@@ -6,6 +6,7 @@ import java.net.http.HttpHeaders;
 import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class HttpResponseException extends IOException {
@@ -16,8 +17,8 @@ public class HttpResponseException extends IOException {
     }
 
     private static String fetchBody(HttpResponse<InputStream> response) {
-        ContentType contentType = ContentType.fromHttpResponse(response);
-        Charset contentCharset = contentType.getCharset().orElse(StandardCharsets.UTF_8);
+        Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
+        Charset contentCharset = contentType.flatMap(ContentType::getCharset).orElse(StandardCharsets.UTF_8);
         try (Reader reader = new InputStreamReader(response.body(), contentCharset); BufferedReader buf = new BufferedReader(reader)) {
             return buf.lines().collect(Collectors.joining());
         } catch (IOException e) {

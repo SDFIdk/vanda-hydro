@@ -17,21 +17,57 @@ import static org.mockito.Mockito.when;
 class ContentTypeTest {
     @Test
     void constructNull() {
-        ContentType ct = new ContentType(null, null);
+        ContentType ct = new ContentType("");
         assertEquals(Optional.empty(), ct.getMediaType());
         assertEquals(Optional.empty(), ct.getCharset());
     }
 
     @Test
-    void getMediaType() {
-        ContentType ct = new ContentType("text/html", Charset.forName("Latin1"));
-        assertEquals(Optional.of("text/html"), ct.getMediaType());
+    void fromContentTypeHeaderValue() {
+        String headerValue = "application/json; charset=utf-8";
+        ContentType ct = new ContentType(headerValue);
+        assertEquals(Optional.of("application/json"), ct.getMediaType());
+        assertEquals(Optional.of(StandardCharsets.UTF_8), ct.getCharset());
     }
 
     @Test
-    void getCharset() {
-        ContentType ct = new ContentType("text/html", Charset.forName("Latin1"));
+    void fromContentTypeHeaderValueFirst() {
+        String headerValue = " text/html ; charset = Latin1 ; boundary=flup";
+        ContentType ct = new ContentType(headerValue);
+        assertEquals(Optional.of("text/html"), ct.getMediaType());
         assertEquals(Optional.of(StandardCharsets.ISO_8859_1), ct.getCharset());
+    }
+
+    @Test
+    void fromContentTypeHeaderValueLast() {
+        String headerValue = "text/html; boundary=flup; charset=Latin2";
+        ContentType ct = new ContentType(headerValue);
+        assertEquals(Optional.of("text/html"), ct.getMediaType());
+        assertEquals(Optional.of(Charset.forName("Latin2")), ct.getCharset());
+    }
+
+    @Test
+    void fromContentTypeHeaderValueEmpty() {
+        String headerValue = "text/html; charset=";
+        ContentType ct = new ContentType(headerValue);
+        assertEquals(Optional.of("text/html"), ct.getMediaType());
+        assertEquals(Optional.empty(), ct.getCharset());
+    }
+
+    @Test
+    void fromContentTypeHeaderValueIllegal() {
+        String headerValue = "text/html; charset=gonøf";
+        ContentType ct = new ContentType(headerValue);
+        assertEquals(Optional.of("text/html"), ct.getMediaType());
+        assertEquals(Optional.empty(), ct.getCharset());
+    }
+
+    @Test
+    void fromContentTypeHeaderValueUnknown() {
+        String headerValue = "text/html; charset=artificial";
+        ContentType ct = new ContentType(headerValue);
+        assertEquals(Optional.of("text/html"), ct.getMediaType());
+        assertEquals(Optional.empty(), ct.getCharset());
     }
 
     @Test
@@ -39,19 +75,18 @@ class ContentTypeTest {
         HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype; charset=utf-8")), (k,v) -> true);
         HttpResponse<?> response = mock(HttpResponse.class);
         when(response.headers()).thenReturn(headers);
-        ContentType ct = ContentType.fromHttpResponse(response);
+        ContentType ct = ContentType.fromHttpResponse(response).get();
         assertEquals(Optional.of("artificial/mediatype"), ct.getMediaType());
         assertEquals(Optional.of(StandardCharsets.UTF_8), ct.getCharset());
     }
 
     @Test
     void fromHttpResponseMissing() {
-        HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype; charset=utf-8")), (k,v) -> false);
+        HttpHeaders headers = HttpHeaders.of(Collections.emptyMap(), (k,v) -> true);
         HttpResponse<?> response = mock(HttpResponse.class);
         when(response.headers()).thenReturn(headers);
-        ContentType ct = ContentType.fromHttpResponse(response);
-        assertEquals(Optional.empty(), ct.getMediaType());
-        assertEquals(Optional.empty(), ct.getCharset());
+        Optional<ContentType> ct = ContentType.fromHttpResponse(response);
+        assertEquals(Optional.empty(), ct);
     }
 
     @Test
@@ -59,7 +94,7 @@ class ContentTypeTest {
         HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype; =utf-8")), (k,v) -> true);
         HttpResponse<?> response = mock(HttpResponse.class);
         when(response.headers()).thenReturn(headers);
-        ContentType ct = ContentType.fromHttpResponse(response);
+        ContentType ct = ContentType.fromHttpResponse(response).get();
         assertEquals(Optional.of("artificial/mediatype"), ct.getMediaType());
         assertEquals(Optional.empty(), ct.getCharset());
     }
@@ -69,7 +104,7 @@ class ContentTypeTest {
         HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype")), (k,v) -> true);
         HttpResponse<?> response = mock(HttpResponse.class);
         when(response.headers()).thenReturn(headers);
-        ContentType ct = ContentType.fromHttpResponse(response);
+        ContentType ct = ContentType.fromHttpResponse(response).get();
         assertEquals(Optional.of("artificial/mediatype"), ct.getMediaType());
         assertEquals(Optional.empty(), ct.getCharset());
     }
