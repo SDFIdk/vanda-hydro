@@ -20,7 +20,6 @@ import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -40,9 +39,9 @@ public class HydrometryHttpService implements HydrometryService {
      *         {@code https://vandah.demo.miljoeportal.dk/api/}
      * @param httpClient The client for sending HTTP requests.
      */
-    public HydrometryHttpService(URI apiBase, HttpClient httpClient) throws URISyntaxException {
+    public HydrometryHttpService(URI apiBase, HttpClient httpClient) {
         if (apiBase.getPath() == null) {
-            throw new URISyntaxException(apiBase.toString(), "Given VanDa Hydrometry API base URL has no path component.");
+            throw new IllegalArgumentException(String.format("Given VanDa Hydrometry API base URL has no path component: %s", apiBase));
         }
         else if (! apiBase.getPath().endsWith("/")) {
             log.warn("Given VanDa Hydrometry API base URL does not end with '/': {}", apiBase);
@@ -82,13 +81,20 @@ public class HydrometryHttpService implements HydrometryService {
                     .parseStrict()
                     .toFormatter();
 
-    private class Operation<T> {
-        private final URIBuilder uriBuilder;
-        private final BiFunction<InputStream,Charset,Iterator<T>> transformer;
+    /**
+     * A mutable, non-thread-safe class for building the path and query
+     * string and invoking the remote service operation.
+     */
+    protected abstract class Operation<T> {
+        private final String opPath;
+        private final List<Map.Entry<String, String>> params = new LinkedList<>();
 
-        private Operation(String path, BiFunction<InputStream,Charset,Iterator<T>> transformer) {
-            uriBuilder = new URIBuilder(apiBase, path);
-            this.transformer = transformer;
+        /**
+         * Create the operation builder.
+         * @param path Path to operation relative to service API base URI.
+         */
+        public Operation(String path) {
+            opPath = path;
         }
 
         /**
@@ -97,7 +103,24 @@ public class HydrometryHttpService implements HydrometryService {
          * @param value Query parameter value.
          */
         protected void addQueryParameter(String parm, String value) {
-            uriBuilder.addQueryParameter(parm, value);
+            params.add(Map.entry(parm, value));
+        }
+
+        /**
+         * Make a URI with path and query from this builder.
+         * @return The created URI.
+         */
+        protected URI buildURI() {
+            try {
+                String q = params.stream()
+                        .map(e -> e.getKey() + "=" + e.getValue())
+                        .collect(Collectors.joining("&"));
+                if (q.isEmpty()) q = null;
+                URI relative = new URI(null, null, opPath, q, null);
+                return apiBase.resolve(relative);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Internal error, query parameters not properly validated.", e);
+            }
         }
 
         public Iterator<T> exec() throws IOException, InterruptedException {
@@ -106,9 +129,8 @@ public class HydrometryHttpService implements HydrometryService {
             if (response.statusCode() != 200) {
                 throw new HttpResponseException(response);
             }
-            checkMediaType(response);
-            Charset contentCharset = getCharset(response);
-            return transformer.apply(response.body(), contentCharset);
+            Charset contentCharset = checkMediaTypeAndDetermineCharset(response);
+            return transform(response.body(), contentCharset);
         }
 
         /**
@@ -116,45 +138,28 @@ public class HydrometryHttpService implements HydrometryService {
          * query parameters. Let the request accept JSON as return data.
          * @return The built request.
          */
-        private HttpRequest buildRequest() {
-            try {
-                return HttpRequest.newBuilder(uriBuilder.buildURI())
-                        .header("Accept", "application/json")
-                        .build();
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("Internal error, query parameters not properly validated.", e);
-            }
+        protected HttpRequest buildRequest() {
+            return HttpRequest.newBuilder(buildURI())
+                    .header("Accept", "application/json")
+                    .build();
         }
 
-        private void checkMediaType(HttpResponse<?> response) {
+        private Charset checkMediaTypeAndDetermineCharset(HttpResponse<?> response) {
             Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
             Optional<String> mediaType = contentType.flatMap(ContentType::getMediaType);
             if (mediaType.isPresent() && ! mediaType.get().equalsIgnoreCase("application/json"))
                 log.debug("Unexpected media type, {}, in response from {}.", mediaType.get(), response.uri());
-        }
-
-        private Charset getCharset(HttpResponse<?> response) {
-            Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
             Charset contentCharset = contentType.flatMap(ContentType::getCharset).orElse(StandardCharsets.UTF_8);
             log.trace("Using charset {} for {}", contentCharset, response.uri());
             return contentCharset;
         }
-    }
 
-    private static class LoggingTransformer<T> implements BiFunction<InputStream,Charset,Iterator<T>> {
-        public Iterator<T> apply(InputStream jsonData, Charset charset) {
-            try (BufferedReader buf = new BufferedReader(new InputStreamReader(jsonData, charset))) {
-                log.trace("Input stream: {}", buf.lines().collect(Collectors.joining()));
-            } catch (IOException e) {
-                log.debug("Unable to read input stream.", e);
-            }
-            return null;
-        }
+        protected abstract Iterator<T> transform(InputStream jsonData, Charset charset);
     }
 
     private class StationsHttpRequest extends Operation<Station> implements GetStationsOperation {
         public StationsHttpRequest() {
-            super("stations", new LoggingTransformer<>());
+            super("stations");
         }
 
         @Override
@@ -197,6 +202,16 @@ public class HydrometryHttpService implements HydrometryService {
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
             addQueryParameter("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
             return this;
+        }
+
+        @Override
+        protected Iterator<Station> transform(InputStream jsonData, Charset charset) {
+            try (BufferedReader buf = new BufferedReader(new InputStreamReader(jsonData, charset))) {
+                log.trace("Input stream: {}", buf.lines().collect(Collectors.joining()));
+            } catch (IOException e) {
+                log.debug("Unable to read input stream.", e);
+            }
+            return null;
         }
     }
 }
