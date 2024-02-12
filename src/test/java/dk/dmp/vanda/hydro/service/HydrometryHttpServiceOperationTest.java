@@ -1,15 +1,25 @@
 package dk.dmp.vanda.hydro.service;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class HydrometryHttpServiceOperationTest {
     HttpClient client = HttpClient.newHttpClient();
@@ -64,6 +74,63 @@ class HydrometryHttpServiceOperationTest {
         op.addQueryParameter("crazy", "$tr@n?€/{symbo|~}");
         op.addQueryParameter("dimmer", "flop");
         assertEquals(new URI("http://localhost/api/op?foo=bar&crazy=$tr@n?€/%7Bsymbo%7C~%7D&dimmer=flop"), op.buildURI());
+    }
+
+    @Test
+    void testRequestThrowsNullBody() throws IOException, InterruptedException, URISyntaxException {
+        HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype; charset=utf-8")), (k, v) -> true);
+        HttpResponse<InputStream> response = mock(HttpResponse.class);
+        when(response.headers()).thenReturn(headers);
+        HttpClient client = mock(HttpClient.class);
+        when(client.send(any(), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        Service service = new Service(new URI("http://localhost/api/"), client);
+        Service.Op op = service.new Op("op");
+        op.addQueryParameter("foo", "bar");
+        assertThrows(HttpResponseException.class, () -> op.exec());
+        ArgumentCaptor<HttpRequest> req = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(client).send(req.capture(), any());
+        assertEquals(new URI("http://localhost/api/op?foo=bar"), req.getValue().uri());
+        assertEquals("GET", req.getValue().method());
+        assertEquals(Optional.of("application/json"), req.getValue().headers().firstValue("Accept"));
+    }
+
+    @Test
+    void testRequestThrows() throws IOException, InterruptedException, URISyntaxException {
+        HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype; charset=utf-8")), (k, v) -> true);
+        HttpResponse<InputStream> response = mock(HttpResponse.class);
+        when(response.headers()).thenReturn(headers);
+        when(response.body()).thenReturn(InputStream.nullInputStream());
+        HttpClient client = mock(HttpClient.class);
+        when(client.send(any(), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        Service service = new Service(new URI("http://localhost/api/"), client);
+        Service.Op op = service.new Op("op");
+        op.addQueryParameter("foo", "bar");
+        assertThrows(HttpResponseException.class, () -> op.exec());
+        ArgumentCaptor<HttpRequest> req = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(client).send(req.capture(), any());
+        assertEquals(new URI("http://localhost/api/op?foo=bar"), req.getValue().uri());
+        assertEquals("GET", req.getValue().method());
+        assertEquals(Optional.of("application/json"), req.getValue().headers().firstValue("Accept"));
+    }
+
+    @Test
+    void testRequest() throws IOException, InterruptedException, URISyntaxException {
+        HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype; charset=utf-8")), (k, v) -> true);
+        HttpResponse<InputStream> response = mock(HttpResponse.class);
+        when(response.statusCode()).thenReturn(200);
+        when(response.headers()).thenReturn(headers);
+        when(response.body()).thenReturn(InputStream.nullInputStream());
+        HttpClient client = mock(HttpClient.class);
+        when(client.send(any(), any(HttpResponse.BodyHandler.class))).thenReturn(response);
+        Service service = new Service(new URI("http://localhost/api/"), client);
+        Service.Op op = service.new Op("op");
+        op.addQueryParameter("foo", "bar");
+        op.exec();
+        ArgumentCaptor<HttpRequest> req = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(client).send(req.capture(), any());
+        assertEquals(new URI("http://localhost/api/op?foo=bar"), req.getValue().uri());
+        assertEquals("GET", req.getValue().method());
+        assertEquals(Optional.of("application/json"), req.getValue().headers().firstValue("Accept"));
     }
 
     static class Service extends HydrometryHttpService {

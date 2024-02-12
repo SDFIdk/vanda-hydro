@@ -12,15 +12,19 @@ import java.util.stream.Collectors;
 public class HttpResponseException extends IOException {
     private final HttpResponse<InputStream> response;
     public HttpResponseException(HttpResponse<InputStream> response) {
-        super(String.format("Status code: %d. Message: %s.", response.statusCode(), fetchBody(response)));
+        super(String.format("status code: %d, message: %s", response.statusCode(), fetchBody(response)));
         this.response = response;
     }
 
     private static String fetchBody(HttpResponse<InputStream> response) {
         Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
         Charset contentCharset = contentType.flatMap(ContentType::getCharset).orElse(StandardCharsets.UTF_8);
-        try (Reader reader = new InputStreamReader(response.body(), contentCharset); BufferedReader buf = new BufferedReader(reader)) {
-            return buf.lines().collect(Collectors.joining());
+        try (InputStream responseStream = response.body()) {
+            if (responseStream == null)
+                return "(no response body)";
+            try (BufferedReader buf = new BufferedReader(new InputStreamReader(responseStream, contentCharset))) {
+                return buf.lines().collect(Collectors.joining());
+            }
         } catch (IOException e) {
             return String.format("(at attempt to retrieve response body: %s)", e);
         }
