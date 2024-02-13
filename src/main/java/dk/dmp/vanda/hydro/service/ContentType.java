@@ -12,7 +12,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import java.util.Optional;
 
-class ContentType {
+public class ContentType {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private final String mediaType;

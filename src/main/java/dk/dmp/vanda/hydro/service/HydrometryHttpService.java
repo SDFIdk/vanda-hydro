@@ -24,7 +24,7 @@ import java.util.stream.Collectors;
  */
 public class HydrometryHttpService implements HydrometryService {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private final OurTransformations httpLayer;
+    private final URLEncodingServiceClient httpLayer;
 
     /**
      * Construct the service client.
@@ -35,7 +35,11 @@ public class HydrometryHttpService implements HydrometryService {
      * @param httpClient The client for sending HTTP requests.
      */
     public HydrometryHttpService(URI apiBase, HttpClient httpClient) {
-        httpLayer = new OurTransformations(apiBase, httpClient);
+        this(new URLEncodingServiceClient(apiBase, httpClient));
+    }
+
+    public HydrometryHttpService(URLEncodingServiceClient urlEncodingServiceClient) {
+        httpLayer = urlEncodingServiceClient;
     }
 
     @Override
@@ -67,74 +71,62 @@ public class HydrometryHttpService implements HydrometryService {
                     .toFormatter();
 
     private class StationsHttpRequest implements GetStationsOperation {
-        private final OpenApiHttpService.Operation<Station> httpLayerOp =
-                httpLayer.new GetStationsOp();
+        private final URLEncodingServiceClient.Request request =
+                httpLayer.new Request("stations");
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            return httpLayerOp.exec();
+            ExtendedInputStreamHttpResponse response = request.submit();
+            return transform(response.body(), response.assumedCharset());
         }
 
         @Override
         public GetStationsOperation stationId(String stationId) {
-            httpLayerOp.addQueryParameter("stationId", stationId);
+            request.addQueryParameter("stationId", stationId);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorStationId(String operatorStationId) {
-            httpLayerOp.addQueryParameter("operatorStationId", operatorStationId);
+            request.addQueryParameter("operatorStationId", operatorStationId);
             return this;
         }
 
         @Override
         public GetStationsOperation stationOwnerCvr(String stationOwnerCvr) {
-            httpLayerOp.addQueryParameter("stationOwnerCvr", stationOwnerCvr);
+            request.addQueryParameter("stationOwnerCvr", stationOwnerCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorCvr(String operatorCvr) {
-            httpLayerOp.addQueryParameter("operatorCvr", operatorCvr);
+            request.addQueryParameter("operatorCvr", operatorCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation parameterSc(int parameterSc) {
-            httpLayerOp.addQueryParameter("parameterSc", String.valueOf(parameterSc));
+            request.addQueryParameter("parameterSc", String.valueOf(parameterSc));
             return this;
         }
 
         @Override
         public GetStationsOperation examinationTypeSc(int examinationTypeSc) {
-            httpLayerOp.addQueryParameter("examinationTypeSc", String.valueOf(examinationTypeSc));
+            request.addQueryParameter("examinationTypeSc", String.valueOf(examinationTypeSc));
             return this;
         }
 
         @Override
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
-            httpLayerOp.addQueryParameter("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
+            request.addQueryParameter("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
             return this;
         }
-    }
 
-    private static class OurTransformations extends OpenApiHttpService {
-        public OurTransformations(URI apiBase, HttpClient httpClient) {
-            super(apiBase, httpClient);
-        }
-
-        public class GetStationsOp extends Operation<Station> {
-            public GetStationsOp() {
-                super("stations");
+        private Iterator<Station> transform(InputStream body, Charset charset) throws IOException {
+            try (BufferedReader buf = new BufferedReader(new InputStreamReader(body, charset))) {
+                log.trace("Input stream: {}", buf.lines().collect(Collectors.joining()));
             }
-
-            @Override
-            protected Iterator<Station> transform(InputStream body, Charset charset) throws IOException {
-                try (BufferedReader buf = new BufferedReader(new InputStreamReader(body, charset))) {
-                    log.trace("Input stream: {}", buf.lines().collect(Collectors.joining()));
-                }
-                return Collections.emptyIterator();
-            }
+            return Collections.emptyIterator();
         }
     }
 }
