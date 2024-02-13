@@ -28,7 +28,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class HydrometryHttpServiceOperationTest {
+class OpenApiHttpServiceTest {
     @Mock HttpClient client;
 
     @Test
@@ -147,7 +147,7 @@ class HydrometryHttpServiceOperationTest {
         assertFalse(iter.hasNext());
     }
 
-    static class Service extends HydrometryHttpService {
+    static class Service extends OpenApiHttpService {
         public Service(URI apiBase, HttpClient httpClient) {
             super(apiBase, httpClient);
         }
