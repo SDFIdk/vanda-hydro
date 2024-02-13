@@ -130,7 +130,10 @@ public class HydrometryHttpService implements HydrometryService {
                 throw new HttpResponseException(response);
             }
             Charset contentCharset = checkMediaTypeAndDetermineCharset(response);
-            return transform(response.body(), contentCharset);
+            try (InputStream body = response.body()) {
+                InputStream b = body == null ? InputStream.nullInputStream() : body;
+                return transform(b, contentCharset);
+            }
         }
 
         /**
@@ -148,13 +151,20 @@ public class HydrometryHttpService implements HydrometryService {
             Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
             Optional<String> mediaType = contentType.flatMap(ContentType::getMediaType);
             if (mediaType.isPresent() && ! mediaType.get().equalsIgnoreCase("application/json"))
-                log.debug("Unexpected media type, {}, in response from {}.", mediaType.get(), response.uri());
+                log.debug("Unexpected media type in response from {}: {}", response.uri(), mediaType.get());
             Charset contentCharset = contentType.flatMap(ContentType::getCharset).orElse(StandardCharsets.UTF_8);
             log.trace("Using charset {} for {}", contentCharset, response.uri());
             return contentCharset;
         }
 
-        protected abstract Iterator<T> transform(InputStream jsonData, Charset charset);
+        /**
+         * Make objects out of the response body.
+         * @param body Response body, presumably containing JSON data. The given stream is not {@code null}, but might be empty.
+         * @param charset The character set fetched from the Content-type or a fall-back character set.
+         * @return Objects decoded from the response body. The method shall not return {@code null}, instead return an empty iterator.
+         * @throws IOException If the input stream fails, or decoding fails.
+         */
+        protected abstract Iterator<T> transform(InputStream body, Charset charset) throws IOException;
     }
 
     private class StationsHttpRequest extends Operation<Station> implements GetStationsOperation {
@@ -205,13 +215,11 @@ public class HydrometryHttpService implements HydrometryService {
         }
 
         @Override
-        protected Iterator<Station> transform(InputStream jsonData, Charset charset) {
-            try (BufferedReader buf = new BufferedReader(new InputStreamReader(jsonData, charset))) {
+        protected Iterator<Station> transform(InputStream body, Charset charset) throws IOException {
+            try (BufferedReader buf = new BufferedReader(new InputStreamReader(body, charset))) {
                 log.trace("Input stream: {}", buf.lines().collect(Collectors.joining()));
-            } catch (IOException e) {
-                log.debug("Unable to read input stream.", e);
             }
-            return null;
+            return Collections.emptyIterator();
         }
     }
 }
