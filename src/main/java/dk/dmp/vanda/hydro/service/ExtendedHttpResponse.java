@@ -1,7 +1,6 @@
 package dk.dmp.vanda.hydro.service;
 
 import javax.net.ssl.SSLSession;
-import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
@@ -11,13 +10,18 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-public class ExtendedInputStreamHttpResponse implements HttpResponse<InputStream> {
-    private final HttpResponse<InputStream> inputStreamHttpResponse;
+/**
+ * Extends a {@link HttpResponse} with interpretation of the Content-Type
+ * header.
+ * @param <T> The type of response body.
+ */
+public class ExtendedHttpResponse<T> implements HttpResponse<T> {
+    private final HttpResponse<T> httpResponse;
     private final Optional<ContentType> contentType;
 
-    public ExtendedInputStreamHttpResponse(HttpResponse<InputStream> inputStreamHttpResponse) {
-        this.inputStreamHttpResponse = inputStreamHttpResponse;
-        contentType = ContentType.fromHttpResponse(inputStreamHttpResponse);
+    public ExtendedHttpResponse(HttpResponse<T> httpResponse) {
+        this.httpResponse = httpResponse;
+        contentType = ContentType.fromHttpResponse(httpResponse);
     }
 
     /**
@@ -33,52 +37,47 @@ public class ExtendedInputStreamHttpResponse implements HttpResponse<InputStream
      * If not found or not supported, fall back to UTF-8.
      * @return Found or fall-back character set.
      */
-    public Charset assumedCharset() {
+    public Charset determineCharset() {
         return contentType.flatMap(ContentType::getCharset).orElse(StandardCharsets.UTF_8);
     }
 
     @Override
     public int statusCode() {
-        return inputStreamHttpResponse.statusCode();
+        return httpResponse.statusCode();
     }
 
     @Override
     public HttpRequest request() {
-        return inputStreamHttpResponse.request();
+        return httpResponse.request();
     }
 
     @Override
-    public Optional<HttpResponse<InputStream>> previousResponse() {
-        return inputStreamHttpResponse.previousResponse();
+    public Optional<HttpResponse<T>> previousResponse() {
+        return httpResponse.previousResponse();
     }
 
     @Override
     public HttpHeaders headers() {
-        return inputStreamHttpResponse.headers();
+        return httpResponse.headers();
     }
 
-    /**
-     * <p>Never returns {@code null}. But the stream may be empty.</p>
-     * {@inheritDoc}
-     */
     @Override
-    public InputStream body() {
-        InputStream body = inputStreamHttpResponse.body();
-        return body == null ? InputStream.nullInputStream() : body;
+    public T body() {
+        return httpResponse.body();
     }
 
     @Override
     public Optional<SSLSession> sslSession() {
-        return inputStreamHttpResponse.sslSession();
+        return httpResponse.sslSession();
     }
 
     @Override
     public URI uri() {
-        return inputStreamHttpResponse.uri();
+        return httpResponse.uri();
     }
 
     @Override
     public HttpClient.Version version() {
-        return inputStreamHttpResponse.version();
+        return httpResponse.version();
     }
 }

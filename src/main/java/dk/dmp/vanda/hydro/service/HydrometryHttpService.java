@@ -10,7 +10,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.nio.charset.Charset;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -24,7 +23,8 @@ import java.util.stream.Collectors;
  */
 public class HydrometryHttpService implements HydrometryService {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private final URLEncodingServiceClient httpLayer;
+    private final URI apiBase;
+    private final StreamHttpClient httpClient;
 
     /**
      * Construct the service client.
@@ -34,12 +34,18 @@ public class HydrometryHttpService implements HydrometryService {
      *         {@code https://vandah.demo.miljoeportal.dk/api/}
      * @param httpClient The client for sending HTTP requests.
      */
-    public HydrometryHttpService(URI apiBase, HttpClient httpClient) {
-        this(new URLEncodingServiceClient(apiBase, httpClient));
-    }
-
-    public HydrometryHttpService(URLEncodingServiceClient urlEncodingServiceClient) {
-        httpLayer = urlEncodingServiceClient;
+    public HydrometryHttpService(URI apiBase, StreamHttpClient httpClient) {
+        if (apiBase.getPath() == null) {
+            throw new IllegalArgumentException(String.format("Given VanDa Hydrometry API base URL has no path component: %s", apiBase));
+        }
+        else if (! apiBase.getPath().endsWith("/")) {
+            log.warn("Given VanDa Hydrometry API base URL does not end with '/': {}", apiBase);
+        }
+        else if (! apiBase.getPath().equals("/api/")) {
+            log.debug("Given VanDa Hydrometry API base URL does not end with '/api/': {}", apiBase);
+        }
+        this.apiBase = apiBase;
+        this.httpClient = httpClient;
     }
 
     @Override
@@ -71,59 +77,64 @@ public class HydrometryHttpService implements HydrometryService {
                     .toFormatter();
 
     private class StationsHttpRequest implements GetStationsOperation {
-        private final URLEncodingServiceClient.Request request =
-                httpLayer.new Request("stations");
+        private final URLEncodedForm form = new URLEncodedForm();
+        {
+            form.resolve(apiBase);
+            form.resolve("stations");
+        }
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            ExtendedInputStreamHttpResponse response = request.submit();
-            return transform(response.body(), response.assumedCharset());
+            ExtendedHttpResponse<InputStream> response = httpClient.submit(form.buildURL());
+            return transform(response.body(), response.determineCharset());
         }
 
         @Override
         public GetStationsOperation stationId(String stationId) {
-            request.addQueryParameter("stationId", stationId);
+            form.addQueryParameter("stationId", stationId);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorStationId(String operatorStationId) {
-            request.addQueryParameter("operatorStationId", operatorStationId);
+            form.addQueryParameter("operatorStationId", operatorStationId);
             return this;
         }
 
         @Override
         public GetStationsOperation stationOwnerCvr(String stationOwnerCvr) {
-            request.addQueryParameter("stationOwnerCvr", stationOwnerCvr);
+            form.addQueryParameter("stationOwnerCvr", stationOwnerCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorCvr(String operatorCvr) {
-            request.addQueryParameter("operatorCvr", operatorCvr);
+            form.addQueryParameter("operatorCvr", operatorCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation parameterSc(int parameterSc) {
-            request.addQueryParameter("parameterSc", String.valueOf(parameterSc));
+            form.addQueryParameter("parameterSc", String.valueOf(parameterSc));
             return this;
         }
 
         @Override
         public GetStationsOperation examinationTypeSc(int examinationTypeSc) {
-            request.addQueryParameter("examinationTypeSc", String.valueOf(examinationTypeSc));
+            form.addQueryParameter("examinationTypeSc", String.valueOf(examinationTypeSc));
             return this;
         }
 
         @Override
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
-            request.addQueryParameter("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
+            form.addQueryParameter("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
             return this;
         }
 
         private Iterator<Station> transform(InputStream body, Charset charset) throws IOException {
-            try (BufferedReader buf = new BufferedReader(new InputStreamReader(body, charset))) {
+            if (body == null) {
+                log.trace("Input stream: null");
+            } else try (BufferedReader buf = new BufferedReader(new InputStreamReader(body, charset))) {
                 log.trace("Input stream: {}", buf.lines().collect(Collectors.joining()));
             }
             return Collections.emptyIterator();

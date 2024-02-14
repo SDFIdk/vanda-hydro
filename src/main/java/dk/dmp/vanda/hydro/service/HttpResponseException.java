@@ -3,22 +3,23 @@ package dk.dmp.vanda.hydro.service;
 import java.io.*;
 import java.net.URI;
 import java.net.http.HttpHeaders;
-import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class HttpResponseException extends IOException {
-    private final HttpResponse<InputStream> response;
-    public HttpResponseException(HttpResponse<InputStream> response) {
+    private final int statusCode;
+    private final URI uri;
+    private final HttpHeaders headers;
+
+    public HttpResponseException(ExtendedHttpResponse<InputStream> response) {
         super(String.format("status code: %d, message: %s", response.statusCode(), fetchBody(response)));
-        this.response = response;
+        statusCode = response.statusCode();
+        uri = response.uri();
+        headers = response.headers();
     }
 
-    private static String fetchBody(HttpResponse<InputStream> response) {
-        Optional<ContentType> contentType = ContentType.fromHttpResponse(response);
-        Charset contentCharset = contentType.flatMap(ContentType::getCharset).orElse(StandardCharsets.UTF_8);
+    private static String fetchBody(ExtendedHttpResponse<InputStream> response) {
+        Charset contentCharset = response.determineCharset();
         try (InputStream responseStream = response.body()) {
             if (responseStream == null)
                 return "(no response body)";
@@ -31,14 +32,14 @@ public class HttpResponseException extends IOException {
     }
 
     public int statusCode() {
-        return response.statusCode();
+        return statusCode;
     }
 
     public URI uri() {
-        return response.uri();
+        return uri;
     }
 
     public HttpHeaders headers() {
-        return response.headers();
+        return headers;
     }
 }
