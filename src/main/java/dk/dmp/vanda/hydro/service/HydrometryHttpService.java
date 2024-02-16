@@ -77,15 +77,14 @@ public class HydrometryHttpService implements HydrometryService {
                     .toFormatter();
 
     private class StationsHttpRequest implements GetStationsOperation {
-        private final URLEncodedForm form = new URLEncodedForm();
+        private final OperationPathAndParameters form = new OperationPathAndParameters();
         {
-            form.resolve(apiBase);
-            form.resolve("stations");
+            form.setPath("stations");
         }
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            ExtendedHttpResponse<InputStream> response = httpClient.submit(form.buildURL());
+            ExtendedHttpResponse<InputStream> response = httpClient.submit(form.appendToURL(apiBase));
             return transform(response.body(), response.determineCharset());
         }
 
