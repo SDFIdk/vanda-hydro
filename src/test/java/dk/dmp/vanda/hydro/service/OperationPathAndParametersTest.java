@@ -52,6 +52,13 @@ class OperationPathAndParametersTest {
     }
 
     @Test
+    void testIllegalParameter() {
+        OperationPathAndParameters form = new OperationPathAndParameters();
+        assertThrows(NullPointerException.class, () -> form.addQueryParameter(null, null));
+        assertThrows(NullPointerException.class, () -> form.addQueryParameter(null, "bar"));
+    }
+
+    @Test
     void testQuery() {
         OperationPathAndParameters form = new OperationPathAndParameters();
         form.setPath("op");
@@ -66,13 +73,13 @@ class OperationPathAndParametersTest {
     void testStrangeQueries() {
         OperationPathAndParameters form = new OperationPathAndParameters();
         form.setPath("þ¤? #");
-        form.addQueryParameter("foo", "bar");
+        form.addQueryParameter("foo", null);
         form.addQueryParameter("cr&zy", "$tr@n?€/ {sy=bo|~}");
         form.addQueryParameter("dimmer", "flop");
         assertAll(
-                () -> assertEquals("foo=bar&cr%26zy=%24tr%40n%3F%E2%82%AC%2F%20%7Bsy%3Dbo%7C%7E%7D&dimmer=flop", form.getQueryString(), "Query string"),
-                () -> assertEquals("þ¤%3F%20%23?foo=bar&cr%26zy=%24tr%40n%3F%E2%82%AC%2F%20%7Bsy%3Dbo%7C%7E%7D&dimmer=flop", form.toString(), "Relative"),
-                () -> assertEquals("http://localhost/api/þ¤%3F%20%23?foo=bar&cr%26zy=%24tr%40n%3F%E2%82%AC%2F%20%7Bsy%3Dbo%7C%7E%7D&dimmer=flop", form.appendToURL(new URI("http://localhost/api")).toString(), "Full")
+                () -> assertEquals("foo&cr%26zy=%24tr%40n%3F%E2%82%AC%2F%20%7Bsy%3Dbo%7C%7E%7D&dimmer=flop", form.getQueryString(), "Query string"),
+                () -> assertEquals("þ¤%3F%20%23?foo&cr%26zy=%24tr%40n%3F%E2%82%AC%2F%20%7Bsy%3Dbo%7C%7E%7D&dimmer=flop", form.toString(), "Relative"),
+                () -> assertEquals("http://localhost/api/þ¤%3F%20%23?foo&cr%26zy=%24tr%40n%3F%E2%82%AC%2F%20%7Bsy%3Dbo%7C%7E%7D&dimmer=flop", form.appendToURL(new URI("http://localhost/api")).toString(), "Full")
         );
     }
 }

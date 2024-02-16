@@ -4,8 +4,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Objects;
+import java.util.StringJoiner;
 
 /**
  * Encode query parameters according to the convensions for encoding
@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class OperationPathAndParameters {
     private String path;
-    private final List<String> params = new LinkedList<>();
+    private final StringJoiner params = new StringJoiner("&");
 
     /**
      * Set and encode the target path.
@@ -38,7 +38,10 @@ public class OperationPathAndParameters {
      * @param value Query parameter value.
      */
     public void addQueryParameter(String parm, String value) {
-        params.add(urlEncode(parm) + "=" + urlEncode(value));
+        Objects.requireNonNull(parm, "parm cannot be null");
+        StringBuilder b = new StringBuilder(urlEncode(parm));
+        if (value != null) b.append("=").append(urlEncode(value));
+        params.add(b.toString());
     }
     private static String urlEncode(String s) {
         return URLEncoder.encode(s, StandardCharsets.UTF_8).replaceAll("\\+", "%20");
@@ -50,8 +53,7 @@ public class OperationPathAndParameters {
      * @return The query string, or {@code null} if the query is empty.
      */
     public String getQueryString() {
-        String q = String.join("&", params);
-        return q.isEmpty() ? null : q;
+        return params.toString();
     }
 
     /**
@@ -60,7 +62,7 @@ public class OperationPathAndParameters {
      */
     public String toString() {
             String qs = getQueryString();
-            return (path != null ? path : "") + (qs != null ? "?" + qs : "");
+            return (path != null ? path : "") + (qs.isEmpty() ? "" : "?") + qs;
     }
 
     /**
