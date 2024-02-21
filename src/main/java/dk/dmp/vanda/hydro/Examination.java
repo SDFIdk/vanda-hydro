@@ -1,6 +1,6 @@
 package dk.dmp.vanda.hydro;
 
-import java.time.ZonedDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * Examination performed on a measurement point.
@@ -46,11 +46,11 @@ public interface Examination {
      * Get the time when the earliest measurement was taken.
      * @return The time of the earliest examination.
      */
-    ZonedDateTime earliestResult();
+    OffsetDateTime earliestResult();
 
     /**
      * Get the time when the lastest measurement was taken.
      * @return The time of the lastest examination.
      */
-    ZonedDateTime latestResult();
+    OffsetDateTime latestResult();
 }

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 public class JsonStation implements Station {
@@ -147,9 +148,9 @@ public class JsonStation implements Station {
     }
 
     private MeasurementPoint[] measurementPoints;
-/*    public void setMeasurementPoints(MeasurementPoint[] pts) {
+    public void setMeasurementPoints(JsonMeasurementPoint[] pts) {
         measurementPoints = pts;
-    } */
+    }
     @Override
     public MeasurementPoint[] measurementPoints() {
         return measurementPoints;
@@ -158,22 +159,22 @@ public class JsonStation implements Station {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof JsonStation that)) return false;
-        return Objects.equals(stationUid, that.stationUid)
-                && Objects.equals(stationId, that.stationId)
-                && Objects.equals(operatorStationId, that.operatorStationId)
-                && Objects.equals(oldStationNumber, that.oldStationNumber)
-                && Objects.equals(locationType, that.locationType)
-                && locationTypeSc == that.locationTypeSc
-                && Objects.equals(stationOwnerCvr, that.stationOwnerCvr)
-                && Objects.equals(stationOwnerName, that.stationOwnerName)
-                && Objects.equals(operatorCvr, that.operatorCvr)
-                && Objects.equals(operatorName, that.operatorName)
-                && Objects.equals(name, that.name)
-                && Objects.equals(description, that.description)
-                && Objects.equals(loggerId, that.loggerId)
-                && Objects.equals(location, that.location)
-                && Arrays.equals(measurementPoints, that.measurementPoints);
+        if (!(o instanceof Station that)) return false;
+        return Objects.equals(stationUid, that.stationUid())
+                && Objects.equals(stationId, that.stationId())
+                && Objects.equals(operatorStationId, that.operatorStationId())
+                && Objects.equals(oldStationNumber, that.oldStationNumber())
+                && Objects.equals(locationType, that.locationType())
+                && locationTypeSc == that.locationTypeSc()
+                && Objects.equals(stationOwnerCvr, that.stationOwnerCvr())
+                && Objects.equals(stationOwnerName, that.stationOwnerName())
+                && Objects.equals(operatorCvr, that.operatorCvr())
+                && Objects.equals(operatorName, that.operatorName())
+                && Objects.equals(name, that.name())
+                && Objects.equals(description, that.description())
+                && Objects.equals(loggerId, that.loggerId())
+                && Objects.equals(location, that.location())
+                && Arrays.equals(measurementPoints, that.measurementPoints());
     }
 
     @Override
@@ -183,22 +184,29 @@ public class JsonStation implements Station {
 
     @Override
     public String toString() {
-        return "JsonStation {"
-                + "stationUid = " + stationUid
-                + ", stationId = \"" + stationId + '"'
-                + ", operatorStationId = \"" + operatorStationId + '"'
-                + ", oldStationNumber = \"" + oldStationNumber + '"'
-                + ", locationType = \"" + locationType + '"'
-                + ", locationTypeSc = " + locationTypeSc
-                + ", stationOwnerCvr = \"" + stationOwnerCvr + '"'
-                + ", stationOwnerName = \"" + stationOwnerName + '"'
-                + ", operatorCvr = \"" + operatorCvr + '"'
-                + ", operatorName = \"" + operatorName + '"'
-                + ", name = \"" + name + '"'
-                + ", description = \"" + description + '"'
-                + ", loggerId = \"" + loggerId + '"'
-                + ", location = " + location
-                + ", measurementPoints = " + Arrays.toString(measurementPoints)
-                + '}';
+        StringJoiner sj = new StringJoiner(", ", "JsonStation {", "}");
+        sj.add(str(stationUid, "stationUid"));
+        sj.add(str(stationId, "stationId"));
+        sj.add(str(operatorStationId, "operatorStationId"));
+        sj.add(str(oldStationNumber, "oldStationNumber"));
+        sj.add(str(locationType, "locationType"));
+        sj.add(str(locationTypeSc, "locationTypeSc"));
+        sj.add(str(stationOwnerCvr, "stationOwnerCvr"));
+        sj.add(str(stationOwnerName, "stationOwnerName"));
+        sj.add(str(operatorCvr, "operatorCvr"));
+        sj.add(str(operatorName, "operatorName"));
+        sj.add(str(name, "name"));
+        sj.add(str(description, "description"));
+        sj.add(str(loggerId, "loggerId"));
+        sj.add(str(location, "location"));
+        sj.add("measurementPoints = " + Arrays.toString(measurementPoints));
+        return sj.toString();
+    }
+
+    private String str(Object obj, String name) {
+        if (obj instanceof CharSequence)
+            return name + " = \"" + obj + "\"";
+        else
+            return name + " = " + obj;
     }
 }

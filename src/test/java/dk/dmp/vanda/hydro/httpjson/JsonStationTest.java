@@ -1,5 +1,7 @@
 package dk.dmp.vanda.hydro.httpjson;
 
+import dk.dmp.vanda.hydro.Examination;
+import dk.dmp.vanda.hydro.MeasurementPoint;
 import dk.dmp.vanda.hydro.Station;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -9,7 +11,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 
 import java.io.InputStream;
-import java.util.Arrays;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -18,7 +20,7 @@ class JsonStationTest {
     GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 25832);
 
     @Test
-    void testOne() throws Exception {
+    void testGetters() throws Exception {
         try (InputStream is = getClass().getResourceAsStream("station_61000181.json"); Jsonb jsonb = JsonbBuilder.create()) {
             assertNotNull(is);
             Station station = jsonb.fromJson(is, JsonStation.class);
@@ -37,7 +39,28 @@ class JsonStationTest {
                     () -> assertEquals("Opland = 27,01 km2", station.description()),
                     () -> assertEquals("41662", station.loggerId()),
                     () -> assertEquals(gf.createPoint(new Coordinate(679796.2734,6091352.6536)), station.location()),
-                    () -> assertEquals("XXX", Arrays.toString(station.measurementPoints()))
+                    () -> assertEquals(1, station.measurementPoints().length)
+            );
+            MeasurementPoint m = station.measurementPoints()[0];
+            assertAll(
+                    () -> assertEquals(1, m.number()),
+                    () -> assertEquals("Sted 1", m.name()),
+                    () -> assertEquals("Vandløb", m.measurementPointType()),
+                    () -> assertEquals(1, m.measurementPointTypeSc()),
+                    () -> assertNull(m.description()),
+                    () -> assertEquals(gf.createPoint(new Coordinate(679796.2734,6091352.6536)), m.location()),
+                    () -> assertEquals(3, m.examinations().length)
+            );
+            Examination e = m.examinations()[0];
+            assertAll(
+                    () -> assertEquals("", e.parameter()),
+                    () -> assertEquals(1, e.parameterSc()),
+                    () -> assertEquals("", e.examinationType()),
+                    () -> assertEquals(1, e.examinationTypeSc()),
+                    () -> assertEquals("", e.unit()),
+                    () -> assertEquals(1, e.unitSc()),
+                    () -> assertEquals(OffsetDateTime.now(), e.earliestResult()),
+                    () -> assertEquals(OffsetDateTime.now(), e.latestResult())
             );
         }
     }
