@@ -15,7 +15,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonStationTest {
-    GeometryFactory gfac = new GeometryFactory(new PrecisionModel(), 25832);
+    GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 25832);
 
     @Test
     void testOne() throws Exception {
@@ -36,7 +36,7 @@ class JsonStationTest {
                     () -> assertEquals("Tt Vålse Vig, Vålse Vig", station.name()),
                     () -> assertEquals("Opland = 27,01 km2", station.description()),
                     () -> assertEquals("41662", station.loggerId()),
-                    () -> assertEquals(gfac.createPoint(new Coordinate(679796.2734,6091352.6536)), station.location()),
+                    () -> assertEquals(gf.createPoint(new Coordinate(679796.2734,6091352.6536)), station.location()),
                     () -> assertEquals("XXX", Arrays.toString(station.measurementPoints()))
             );
         }

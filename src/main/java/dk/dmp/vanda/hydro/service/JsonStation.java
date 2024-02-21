@@ -2,6 +2,7 @@ package dk.dmp.vanda.hydro.service;
 
 import dk.dmp.vanda.hydro.MeasurementPoint;
 import dk.dmp.vanda.hydro.Station;
+import jakarta.json.bind.annotation.JsonbTypeAdapter;
 import org.locationtech.jts.geom.Point;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -136,9 +137,10 @@ public class JsonStation implements Station {
     }
 
     private Point location;
-/*    public void setLocation(Point p) {
+    @JsonbTypeAdapter(PointJsonAdapter.class)
+    public void setLocation(Point p) {
         location = p;
-    } */
+    }
     @Override
     public Point location() {
         return location;
