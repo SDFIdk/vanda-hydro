@@ -1,4 +1,4 @@
-package dk.dmp.vanda.hydro.service;
+package dk.dmp.vanda.hydro.httpjson;
 
 import javax.net.ssl.SSLSession;
 import java.net.URI;

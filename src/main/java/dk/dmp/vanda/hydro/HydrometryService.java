@@ -1,7 +1,4 @@
-package dk.dmp.vanda.hydro.service;
-
-import dk.dmp.vanda.hydro.Station;
-import dk.dmp.vanda.hydro.WaterLevelMeasurement;
+package dk.dmp.vanda.hydro;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
@@ -105,7 +102,7 @@ public interface HydrometryService {
 
         /**
          * Query from the given timestamp.
-         * Both {@linkplain #from(OffsetDateTime) from} and
+         * Both from and
          * {@linkplain #to(OffsetDateTime) to} must be specified if one
          * of them is present.
          * Note that components after minute are ignored.
@@ -116,7 +113,7 @@ public interface HydrometryService {
         /**
          * Query until the given timestamp.
          * Both {@linkplain #from(OffsetDateTime) from} and
-         * {@linkplain #to(OffsetDateTime) to} must be specified if one
+         * to must be specified if one
          * of them is present.
          * Note that components after minute are ignored.
          * If not specified, return data for the last 24 hours.

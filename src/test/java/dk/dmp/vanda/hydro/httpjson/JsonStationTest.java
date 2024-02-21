@@ -1,4 +1,4 @@
-package dk.dmp.vanda.hydro.service;
+package dk.dmp.vanda.hydro.httpjson;
 
 import dk.dmp.vanda.hydro.Station;
 import jakarta.json.bind.Jsonb;

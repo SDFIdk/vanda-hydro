@@ -1,4 +1,4 @@
-package dk.dmp.vanda.hydro.service;
+package dk.dmp.vanda.hydro.httpjson;
 
 import jakarta.json.bind.adapter.JsonbAdapter;
 import org.locationtech.jts.geom.Coordinate;

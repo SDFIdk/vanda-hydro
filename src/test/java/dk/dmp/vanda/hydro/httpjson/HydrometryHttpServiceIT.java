@@ -1,5 +1,6 @@
-package dk.dmp.vanda.hydro.service;
+package dk.dmp.vanda.hydro.httpjson;
 
+import dk.dmp.vanda.hydro.HydrometryService;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

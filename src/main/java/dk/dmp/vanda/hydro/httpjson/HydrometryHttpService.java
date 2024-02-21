@@ -1,5 +1,6 @@
-package dk.dmp.vanda.hydro.service;
+package dk.dmp.vanda.hydro.httpjson;
 
+import dk.dmp.vanda.hydro.HydrometryService;
 import dk.dmp.vanda.hydro.Station;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
