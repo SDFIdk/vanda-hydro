@@ -1,1 +1,10 @@
-{"parameter":"Vandstand DVR90","parameterSc":439,"examinationType":"Kotem\u00E5ling","examinationTypeSc":21,"unit":"m","unitSc":63,"firstResult":"2015-12-31T23:01:00.00Z","latestResult":"2018-01-01T12:00:00.00Z"}
+{
+  "parameter": "Vandstand DVR90",
+  "parameterSc": 439,
+  "examinationType": "Kotem\u00E5ling",
+  "examinationTypeSc": 21,
+  "unit": "m",
+  "unitSc": 63,
+  "firstResult": "2015-12-31T23:01:00.00Z",
+  "latestResult": "2018-01-01T12:00:00.00Z"
+}

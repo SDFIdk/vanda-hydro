@@ -12,19 +12,20 @@ import java.time.ZoneOffset;
 import static org.junit.jupiter.api.Assertions.*;
 
 class JsonExaminationTest {
-JsonExamination a;
+Examination a;
 
 @BeforeEach
 void setup() {
-    a = new JsonExamination();
-    a.setParameter("Vandstand DVR90");
-    a.setParameterSc(439);
-    a.setExaminationType("Kotemåling");
-    a.setExaminationTypeSc(21);
-    a.setUnit("m");
-    a.setUnitSc(63);
-    a.setEarliestResult(OffsetDateTime.of(2015,12,31, 23,1,0,0, ZoneOffset.ofHours(0)));
-    a.setLatestResult(OffsetDateTime.of(2018,1,1, 12,0,0,0, ZoneOffset.ofHours(0)));
+    JsonExamination e = new JsonExamination();
+    e.setParameter("Vandstand DVR90");
+    e.setParameterSc(439);
+    e.setExaminationType("Kotemåling");
+    e.setExaminationTypeSc(21);
+    e.setUnit("m");
+    e.setUnitSc(63);
+    e.setEarliestResult(OffsetDateTime.of(2015,12,31, 23,1,0,0, ZoneOffset.ofHours(0)));
+    e.setLatestResult(OffsetDateTime.of(2018,1,1, 12,0,0,0, ZoneOffset.ofHours(0)));
+    a = e;
 }
 
 @Test
@@ -82,12 +83,12 @@ void testEquals() {
 
 @Test
 void testString() {
-    String e = "JsonExamination {parameter = \"Vandstand DVR90\", parameterSc = 439"
-        + ", examinationType = \"Kotemåling\", examinationTypeSc = 21"
-        + ", unit = \"m\", unitSc = 63"
-        + ", earliestResult = 2015-12-31T23:01Z, latestResult = 2018-01-01T12:00Z"
-        + "}";
-    assertEquals(e, a.toString());
+    String s = "JsonExamination(parameter: »Vandstand DVR90«, parameterSc: 439"
+        + ", examinationType: »Kotemåling«, examinationTypeSc: 21"
+        + ", unit: »m«, unitSc: 63"
+        + ", earliestResult: 2015-12-31T23:01Z, latestResult: 2018-01-01T12:00Z"
+        + ")";
+    assertEquals(s, a.toString());
 }
 
 @Test

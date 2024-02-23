@@ -2,6 +2,8 @@ package dk.dmp.vanda.hydro;
 
 import org.locationtech.jts.geom.Point;
 
+import java.util.List;
+
 /**
  * A point in the station where measurements are taken.
  */
@@ -44,8 +46,14 @@ public interface MeasurementPoint {
     Point location();
 
     /**
+     * Get the intake number of this measurement point at the gauge station.
+     * @return Intake number.
+     */
+    Integer intakeNumber();
+
+    /**
      * Get the examinations performed on the measurement point.
      * @return Examinations performed on the measurement point.
      */
-    Examination[] examinations();
+    List<? extends Examination> examinations();
 }

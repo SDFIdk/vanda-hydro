@@ -5,9 +5,10 @@ import dk.dmp.vanda.hydro.MeasurementPoint;
 import jakarta.json.bind.annotation.JsonbTypeAdapter;
 import org.locationtech.jts.geom.Point;
 
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.StringJoiner;
+import java.util.*;
+
+import static dk.dmp.vanda.hydro.httpjson.Labler.joiner;
+import static dk.dmp.vanda.hydro.httpjson.Labler.lable;
 
 public class JsonMeasurementPoint implements MeasurementPoint {
     private int number;
@@ -65,12 +66,22 @@ public class JsonMeasurementPoint implements MeasurementPoint {
         return location;
     }
 
-    private Examination[] examinations;
-    public void setExaminations(JsonExamination[] a) {
+    private Integer intakeNumber;
+    public void setIntakeNumber(Integer n) {
+        intakeNumber = n;
+    }
+    @Override
+    public Integer intakeNumber() {
+        return intakeNumber;
+    }
+
+    private List<? extends Examination> examinations;
+    @JsonbTypeAdapter(JsonExamination.ListJsonAdapter.class)
+    public void setExaminations(List<? extends Examination> a) {
         examinations = a;
     }
     @Override
-    public Examination[] examinations() {
+    public List<? extends Examination> examinations() {
         return examinations;
     }
 
@@ -79,12 +90,13 @@ public class JsonMeasurementPoint implements MeasurementPoint {
         if (this == o) return true;
         if (!(o instanceof MeasurementPoint that)) return false;
         return number == that.number()
-                && Objects.equals(name, that.name())
-                && Objects.equals(measurementPointType, that.measurementPointType())
-                && Objects.equals(measurementPointTypeSc, that.measurementPointTypeSc())
-                && Objects.equals(description, that.description())
-                && Objects.equals(location, that.location())
-                && Arrays.equals(examinations, that.examinations());
+            && Objects.equals(name, that.name())
+            && Objects.equals(measurementPointType, that.measurementPointType())
+            && Objects.equals(measurementPointTypeSc, that.measurementPointTypeSc())
+            && Objects.equals(description, that.description())
+            && Objects.equals(location, that.location())
+            && Objects.equals(intakeNumber, that.intakeNumber())
+            && Objects.equals(examinations, that.examinations());
     }
 
     @Override
@@ -94,21 +106,16 @@ public class JsonMeasurementPoint implements MeasurementPoint {
 
     @Override
     public String toString() {
-        StringJoiner sj = new StringJoiner(", ", "JsonMeasurementPoint {", "}");
-        sj.add(str(number, "number"));
-        sj.add(str(name, "name"));
-        sj.add(str(measurementPointType, "measurementPointType"));
-        sj.add(str(measurementPointTypeSc, "measurementPointTypeSc"));
-        sj.add(str(description, "description"));
-        sj.add(str(location, "location"));
-        sj.add("examinations = " + Arrays.toString(examinations));
+        StringJoiner sj = joiner(JsonMeasurementPoint.class);
+        sj.add(lable(number, "number"));
+        sj.add(lable(name, "name"));
+        sj.add(lable(measurementPointType, "measurementPointType"));
+        sj.add(lable(measurementPointTypeSc, "measurementPointTypeSc"));
+        sj.add(lable(description, "description"));
+        sj.add(lable(location, "location"));
+        sj.add(lable(intakeNumber, "intakeNumber"));
+        sj.add(lable(examinations, "examinations"));
         return sj.toString();
     }
 
-    private String str(Object obj, String name) {
-        if (obj instanceof CharSequence)
-            return name + " = \"" + obj + "\"";
-        else
-            return name + " = " + obj;
-    }
 }

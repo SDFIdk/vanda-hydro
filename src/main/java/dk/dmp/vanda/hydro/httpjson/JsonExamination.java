@@ -1,11 +1,16 @@
 package dk.dmp.vanda.hydro.httpjson;
 
 import dk.dmp.vanda.hydro.Examination;
+import jakarta.json.bind.adapter.JsonbAdapter;
 import jakarta.json.bind.annotation.JsonbProperty;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Objects;
 import java.util.StringJoiner;
+
+import static dk.dmp.vanda.hydro.httpjson.Labler.joiner;
+import static dk.dmp.vanda.hydro.httpjson.Labler.lable;
 
 public class JsonExamination implements Examination {
     private String parameter;
@@ -102,22 +107,24 @@ public class JsonExamination implements Examination {
 
     @Override
     public String toString() {
-        StringJoiner sj = new StringJoiner(", ", "JsonExamination {", "}");
-        sj.add(str(parameter, "parameter"));
-        sj.add(str(parameterSc, "parameterSc"));
-        sj.add(str(examinationType, "examinationType"));
-        sj.add(str(examinationTypeSc, "examinationTypeSc"));
-        sj.add(str(unit, "unit"));
-        sj.add(str(unitSc, "unitSc"));
-        sj.add(str(earliestResult, "earliestResult"));
-        sj.add(str(latestResult, "latestResult"));
+        StringJoiner sj = joiner(JsonExamination.class);
+        sj.add(lable(parameter, "parameter"));
+        sj.add(lable(parameterSc, "parameterSc"));
+        sj.add(lable(examinationType, "examinationType"));
+        sj.add(lable(examinationTypeSc, "examinationTypeSc"));
+        sj.add(lable(unit, "unit"));
+        sj.add(lable(unitSc, "unitSc"));
+        sj.add(lable(earliestResult, "earliestResult"));
+        sj.add(lable(latestResult, "latestResult"));
         return sj.toString();
     }
 
-    private String str(Object obj, String name) {
-        if (obj instanceof CharSequence)
-            return name + " = \"" + obj + "\"";
-        else
-            return name + " = " + obj;
+    public static class ListJsonAdapter implements JsonbAdapter<List<? extends Examination>,List<JsonExamination>> {
+        public List<JsonExamination> adaptToJson(List<? extends Examination> es) {
+            throw new UnsupportedOperationException();
+        }
+        public List<? extends Examination> adaptFromJson(List<JsonExamination> es) {
+            return es;
+        }
     }
 }

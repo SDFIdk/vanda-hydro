@@ -49,9 +49,9 @@ class JsonStationTest {
                     () -> assertEquals(1, m.measurementPointTypeSc()),
                     () -> assertNull(m.description()),
                     () -> assertEquals(gf.createPoint(new Coordinate(679796.2734,6091352.6536)), m.location()),
-                    () -> assertEquals(3, m.examinations().length)
+                    () -> assertEquals(3, m.examinations().size())
             );
-            Examination e = m.examinations()[0];
+            Examination e = m.examinations().getFirst();
             assertAll(
                     () -> assertEquals("", e.parameter()),
                     () -> assertEquals(1, e.parameterSc()),
