@@ -119,12 +119,13 @@ public class JsonExamination implements Examination {
         return sj.toString();
     }
 
-    public static class ListJsonAdapter implements JsonbAdapter<List<? extends Examination>,List<JsonExamination>> {
-        public List<JsonExamination> adaptToJson(List<? extends Examination> es) {
+    public static class ListJsonAdapter implements JsonbAdapter<List<Examination>,List<JsonExamination>> {
+        public List<JsonExamination> adaptToJson(List<Examination> es) {
             throw new UnsupportedOperationException();
         }
-        public List<? extends Examination> adaptFromJson(List<JsonExamination> es) {
-            return es;
+        @SuppressWarnings("unchecked")
+        public List<Examination> adaptFromJson(List<JsonExamination> es) {
+            return (List<Examination>)(List<?>)es;
         }
     }
 }

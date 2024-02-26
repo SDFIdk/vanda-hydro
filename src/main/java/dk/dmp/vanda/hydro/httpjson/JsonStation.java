@@ -8,20 +8,23 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.invoke.MethodHandles;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.StringJoiner;
-import java.util.UUID;
+import java.util.*;
+
+import static dk.dmp.vanda.hydro.httpjson.Labler.lable;
 
 public class JsonStation implements Station {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
     private UUID stationUid;
     public void setStationUid(String str) {
-        try {
-            stationUid = UUID.fromString(str);
-        } catch (IllegalArgumentException e) {
-            log.debug("Cannot interpret stationUid as a UUID: {}", str, e);
+        if (str == null || str.isEmpty()) {
+            stationUid = null;
+        } else {
+            try {
+                stationUid = UUID.fromString(str);
+            } catch (IllegalArgumentException e) {
+                log.debug("Cannot interpret stationUid as a UUID: {}", str, e);
+            }
         }
     }
     @Override
@@ -147,12 +150,13 @@ public class JsonStation implements Station {
         return location;
     }
 
-    private MeasurementPoint[] measurementPoints;
-    public void setMeasurementPoints(JsonMeasurementPoint[] pts) {
+    private List<MeasurementPoint> measurementPoints;
+    @JsonbTypeAdapter(JsonMeasurementPoint.ListJsonAdapter.class)
+    public void setMeasurementPoints(List<MeasurementPoint> pts) {
         measurementPoints = pts;
     }
     @Override
-    public MeasurementPoint[] measurementPoints() {
+    public List<MeasurementPoint> measurementPoints() {
         return measurementPoints;
     }
 
@@ -174,7 +178,7 @@ public class JsonStation implements Station {
                 && Objects.equals(description, that.description())
                 && Objects.equals(loggerId, that.loggerId())
                 && Objects.equals(location, that.location())
-                && Arrays.equals(measurementPoints, that.measurementPoints());
+                && Objects.equals(measurementPoints, that.measurementPoints());
     }
 
     @Override
@@ -184,29 +188,22 @@ public class JsonStation implements Station {
 
     @Override
     public String toString() {
-        StringJoiner sj = new StringJoiner(", ", "JsonStation {", "}");
-        sj.add(str(stationUid, "stationUid"));
-        sj.add(str(stationId, "stationId"));
-        sj.add(str(operatorStationId, "operatorStationId"));
-        sj.add(str(oldStationNumber, "oldStationNumber"));
-        sj.add(str(locationType, "locationType"));
-        sj.add(str(locationTypeSc, "locationTypeSc"));
-        sj.add(str(stationOwnerCvr, "stationOwnerCvr"));
-        sj.add(str(stationOwnerName, "stationOwnerName"));
-        sj.add(str(operatorCvr, "operatorCvr"));
-        sj.add(str(operatorName, "operatorName"));
-        sj.add(str(name, "name"));
-        sj.add(str(description, "description"));
-        sj.add(str(loggerId, "loggerId"));
-        sj.add(str(location, "location"));
-        sj.add("measurementPoints = " + Arrays.toString(measurementPoints));
+        StringJoiner sj = Labler.joiner(JsonStation.class);
+        sj.add(lable(stationUid, "stationUid"));
+        sj.add(lable(stationId, "stationId"));
+        sj.add(lable(operatorStationId, "operatorStationId"));
+        sj.add(lable(oldStationNumber, "oldStationNumber"));
+        sj.add(lable(locationType, "locationType"));
+        sj.add(lable(locationTypeSc, "locationTypeSc"));
+        sj.add(lable(stationOwnerCvr, "stationOwnerCvr"));
+        sj.add(lable(stationOwnerName, "stationOwnerName"));
+        sj.add(lable(operatorCvr, "operatorCvr"));
+        sj.add(lable(operatorName, "operatorName"));
+        sj.add(lable(name, "name"));
+        sj.add(lable(description, "description"));
+        sj.add(lable(loggerId, "loggerId"));
+        sj.add(lable(location, "location"));
+        sj.add(lable(measurementPoints, "measurementPoints"));
         return sj.toString();
-    }
-
-    private String str(Object obj, String name) {
-        if (obj instanceof CharSequence)
-            return name + " = \"" + obj + "\"";
-        else
-            return name + " = " + obj;
     }
 }

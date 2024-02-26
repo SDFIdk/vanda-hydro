@@ -2,6 +2,7 @@ package dk.dmp.vanda.hydro.httpjson;
 
 import dk.dmp.vanda.hydro.Examination;
 import dk.dmp.vanda.hydro.MeasurementPoint;
+import jakarta.json.bind.adapter.JsonbAdapter;
 import jakarta.json.bind.annotation.JsonbTypeAdapter;
 import org.locationtech.jts.geom.Point;
 
@@ -75,13 +76,13 @@ public class JsonMeasurementPoint implements MeasurementPoint {
         return intakeNumber;
     }
 
-    private List<? extends Examination> examinations;
+    private List<Examination> examinations;
     @JsonbTypeAdapter(JsonExamination.ListJsonAdapter.class)
-    public void setExaminations(List<? extends Examination> a) {
+    public void setExaminations(List<Examination> a) {
         examinations = a;
     }
     @Override
-    public List<? extends Examination> examinations() {
+    public List<Examination> examinations() {
         return examinations;
     }
 
@@ -118,4 +119,13 @@ public class JsonMeasurementPoint implements MeasurementPoint {
         return sj.toString();
     }
 
+    public static class ListJsonAdapter implements JsonbAdapter<List<MeasurementPoint>,List<JsonMeasurementPoint>> {
+        public List<JsonMeasurementPoint> adaptToJson(List<MeasurementPoint> ms) {
+            throw new UnsupportedOperationException();
+        }
+        @SuppressWarnings("unchecked")
+        public List<MeasurementPoint> adaptFromJson(List<JsonMeasurementPoint> ms) {
+            return (List<MeasurementPoint>)(List<?>)ms;
+        }
+    }
 }

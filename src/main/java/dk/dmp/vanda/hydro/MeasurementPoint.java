@@ -55,5 +55,5 @@ public interface MeasurementPoint {
      * Get the examinations performed on the measurement point.
      * @return Examinations performed on the measurement point.
      */
-    List<? extends Examination> examinations();
+    List<Examination> examinations();
 }

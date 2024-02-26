@@ -2,6 +2,7 @@ package dk.dmp.vanda.hydro;
 
 import org.locationtech.jts.geom.Point;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -103,5 +104,5 @@ public interface Station {
      * one outgoing. Other stations have just one measurement point.
      * @return The measurement points in the station.
      */
-    MeasurementPoint[] measurementPoints();
+    List<MeasurementPoint> measurementPoints();
 }
