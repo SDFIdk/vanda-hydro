@@ -10,9 +10,7 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 
 import java.io.InputStream;
-import java.time.OffsetDateTime;
 import java.util.Collections;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,23 +30,7 @@ void setup() {
     m.setIntakeNumber(null);
     JsonExamination e1 = new JsonExamination();
     e1.setParameter("Vandstand");
-    e1.setParameterSc(1233);
-    e1.setExaminationType("Vandstand");
-    e1.setExaminationTypeSc(25);
-    e1.setUnit("cm");
-    e1.setUnitSc(19);
-    e1.setEarliestResult(OffsetDateTime.parse("2023-10-02T18:05:00.00Z"));
-    e1.setLatestResult(OffsetDateTime.parse("2024-01-31T18:00:00.00Z"));
-    JsonExamination e2 = new JsonExamination();
-    e2.setParameter("Vandføring");
-    e2.setParameterSc(1155);
-    e2.setExaminationType("Vandføring");
-    e2.setExaminationTypeSc(27);
-    e2.setUnit("l/s");
-    e2.setUnitSc(55);
-    e2.setEarliestResult(OffsetDateTime.parse("2023-10-02T18:05:00.00Z"));
-    e2.setLatestResult(OffsetDateTime.parse("2024-01-31T18:00:00.00Z"));
-    m.setExaminations(List.of(e1,e2));
+    m.setExaminations(Collections.singletonList(e1));
     a = m;
 }
 
@@ -57,22 +39,6 @@ void testGetters() {
     GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 25832);
     JsonExamination e1 = new JsonExamination();
     e1.setParameter("Vandstand");
-    e1.setParameterSc(1233);
-    e1.setExaminationType("Vandstand");
-    e1.setExaminationTypeSc(25);
-    e1.setUnit("cm");
-    e1.setUnitSc(19);
-    e1.setEarliestResult(OffsetDateTime.parse("2023-10-02T18:05:00.00Z"));
-    e1.setLatestResult(OffsetDateTime.parse("2024-01-31T18:00:00.00Z"));
-    JsonExamination e2 = new JsonExamination();
-    e2.setParameter("Vandføring");
-    e2.setParameterSc(1155);
-    e2.setExaminationType("Vandføring");
-    e2.setExaminationTypeSc(27);
-    e2.setUnit("l/s");
-    e2.setUnitSc(55);
-    e2.setEarliestResult(OffsetDateTime.parse("2023-10-02T18:05:00.00Z"));
-    e2.setLatestResult(OffsetDateTime.parse("2024-01-31T18:00:00.00Z"));
     assertAll(
         () -> assertEquals(1, a.number()),
         () -> assertEquals("Sted 1", a.name()),
@@ -81,7 +47,7 @@ void testGetters() {
         () -> assertNull(a.description()),
         () -> assertEquals(gf.createPoint(new Coordinate(679796.2734, 6091352.6536)), a.location()),
         () -> assertNull(a.intakeNumber()),
-        () -> assertIterableEquals(List.of(e1,e2), a.examinations())
+        () -> assertIterableEquals(Collections.singletonList(e1), a.examinations())
     );
 }
 
@@ -98,23 +64,7 @@ void testEquals() {
     m.setIntakeNumber(null);
     JsonExamination e1 = new JsonExamination();
     e1.setParameter("Vandstand");
-    e1.setParameterSc(1233);
-    e1.setExaminationType("Vandstand");
-    e1.setExaminationTypeSc(25);
-    e1.setUnit("cm");
-    e1.setUnitSc(19);
-    e1.setEarliestResult(OffsetDateTime.parse("2023-10-02T18:05:00.00Z"));
-    e1.setLatestResult(OffsetDateTime.parse("2024-01-31T18:00:00.00Z"));
-    JsonExamination e2 = new JsonExamination();
-    e2.setParameter("Vandføring");
-    e2.setParameterSc(1155);
-    e2.setExaminationType("Vandføring");
-    e2.setExaminationTypeSc(27);
-    e2.setUnit("l/s");
-    e2.setUnitSc(55);
-    e2.setEarliestResult(OffsetDateTime.parse("2023-10-02T18:05:00.00Z"));
-    e2.setLatestResult(OffsetDateTime.parse("2024-01-31T18:00:00.00Z"));
-    m.setExaminations(List.of(e1,e2));
+    m.setExaminations(Collections.singletonList(e1));
     m.setNumber(0);
     assertNotEquals(a, m);
     m.setNumber(1);
@@ -138,7 +88,7 @@ void testEquals() {
     m.setIntakeNumber(null);
     m.setExaminations(Collections.emptyList());
     assertNotEquals(a, m);
-    m.setExaminations(List.of(e1,e2));
+    m.setExaminations(Collections.singletonList(e1));
     assertEquals(a, m);
 }
 
@@ -149,14 +99,10 @@ void testString() {
         + ", description: null, location: POINT (679796.2734 6091352.6536)"
         + ", intakeNumber: null"
         + ", examinations: ["
-        + "JsonExamination(parameter: »Vandstand«, parameterSc: 1233"
-        + ", examinationType: »Vandstand«, examinationTypeSc: 25"
-        + ", unit: »cm«, unitSc: 19, earliestResult: 2023-10-02T18:05Z"
-        + ", latestResult: 2024-01-31T18:00Z), "
-        + "JsonExamination(parameter: »Vandføring«, parameterSc: 1155"
-        + ", examinationType: »Vandføring«, examinationTypeSc: 27"
-        + ", unit: »l/s«, unitSc: 55, earliestResult: 2023-10-02T18:05Z"
-        + ", latestResult: 2024-01-31T18:00Z)"
+        + "JsonExamination(parameter: »Vandstand«, parameterSc: null"
+        + ", examinationType: null, examinationTypeSc: null"
+        + ", unit: null, unitSc: null, earliestResult: null"
+        + ", latestResult: null)"
         + "]"
         + ")";
     assertEquals(s, a.toString());

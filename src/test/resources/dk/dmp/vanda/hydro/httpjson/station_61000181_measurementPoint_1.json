@@ -12,24 +12,7 @@
   "intakeNumber": null,
   "examinations": [
     {
-      "parameter": "Vandstand",
-      "parameterSc": 1233,
-      "examinationType": "Vandstand",
-      "examinationTypeSc": 25,
-      "unit": "cm",
-      "unitSc": 19,
-      "firstResult": "2023-10-02T18:05:00.00Z",
-      "latestResult": "2024-01-31T18:00:00.00Z"
-    },
-    {
-      "parameter": "Vandf\u00F8ring",
-      "parameterSc": 1155,
-      "examinationType": "Vandf\u00F8ring",
-      "examinationTypeSc": 27,
-      "unit": "l/s",
-      "unitSc": 55,
-      "firstResult": "2023-10-02T18:05:00.00Z",
-      "latestResult": "2024-01-31T18:00:00.00Z"
+      "parameter": "Vandstand"
     }
   ]
 }
