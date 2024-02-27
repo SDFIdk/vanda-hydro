@@ -13,11 +13,22 @@ import java.net.http.HttpResponse;
 import java.util.*;
 
 /**
+ * A wrapper on top of a {@link HttpClient}. As such an object of this
+ * class closes the underlying {@link HttpClient}, when this object is
+ * {@linkplain #close() closed}.
  * The implementation is immutable, thus thread-safe.
  */
-public class StreamHttpClient {
+public class StreamHttpClient implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final HttpClient httpClient;
+
+    /**
+     * Default constructor, creates a default {@link HttpClient}
+     * internally.
+     */
+    public StreamHttpClient() {
+        this(HttpClient.newHttpClient());
+    }
 
     /**
      * Construct the client.
@@ -59,5 +70,14 @@ public class StreamHttpClient {
         Optional<String> mediaType = contentType.flatMap(ContentType::getMediaType);
         if (mediaType.isPresent() && ! mediaType.get().equalsIgnoreCase("application/json"))
             log.debug("Unexpected media type in response from {}: {}", response.uri(), mediaType.get());
+    }
+
+    /**
+     * Closes the underlying HTTP client.
+     * @see HttpClient#close()
+     */
+    @Override
+    public void close() {
+        httpClient.close();
     }
 }

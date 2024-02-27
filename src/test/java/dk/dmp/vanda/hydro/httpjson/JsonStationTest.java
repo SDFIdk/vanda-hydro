@@ -10,8 +10,8 @@ import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.PrecisionModel;
 
 import java.io.InputStream;
-import java.util.Collections;
-import java.util.UUID;
+import java.lang.reflect.Type;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -159,6 +159,16 @@ class JsonStationTest {
         try (InputStream is = getClass().getResourceAsStream("station_61000181.json"); Jsonb jsonb = JsonbBuilder.create()) {
             Station station = jsonb.fromJson(is, JsonStation.class);
             assertEquals(a, station);
+        }
+    }
+
+    @Test
+    void testJsonList() throws Exception {
+        try (InputStream is = getClass().getResourceAsStream("stations.json"); Jsonb jsonb = JsonbBuilder.create()) {
+            Object dummy = new LinkedList<JsonStation>(){};
+            Type t = dummy.getClass().getGenericSuperclass();
+            List<JsonStation> stations = jsonb.fromJson(is, t);
+            assertIterableEquals(Collections.singletonList(a), stations);
         }
     }
 }

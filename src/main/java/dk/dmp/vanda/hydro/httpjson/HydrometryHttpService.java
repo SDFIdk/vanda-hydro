@@ -2,28 +2,30 @@ package dk.dmp.vanda.hydro.httpjson;
 
 import dk.dmp.vanda.hydro.HydrometryService;
 import dk.dmp.vanda.hydro.Station;
+import jakarta.json.bind.Jsonb;
+import jakarta.json.bind.JsonbBuilder;
+import jakarta.json.bind.JsonbException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The implementation is immutable, thus thread-safe.
  * However, the operations builders are not.
  */
-public class HydrometryHttpService implements HydrometryService {
+public class HydrometryHttpService implements HydrometryService, AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+    private final Jsonb jsonb = JsonbBuilder.create();
     private final URI apiBase;
     private final StreamHttpClient httpClient;
 
@@ -77,6 +79,23 @@ public class HydrometryHttpService implements HydrometryService {
                     .parseStrict()
                     .toFormatter();
 
+    /**
+     * Closes the internal JSON-B deserializer.
+     * <p>NB! Does not close the given HTTP client.</p>
+     * @throws IOException If thrown by JSON-B.
+     */
+    @Override
+    public void close() throws IOException {
+        try {
+            jsonb.close();
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected exception thrown by JSON-B on close", e);
+        }
+    }
+
+    private static final Type JsonStationArrayType = new LinkedList<JsonStation>(){}.getClass().getGenericSuperclass();
     private class StationsHttpRequest implements GetStationsOperation {
         private final OperationPathAndParameters form = new OperationPathAndParameters();
         {
@@ -133,11 +152,15 @@ public class HydrometryHttpService implements HydrometryService {
 
         private Iterator<Station> transform(InputStream body, Charset charset) throws IOException {
             if (body == null) {
-                log.trace("Input stream: null");
-            } else try (BufferedReader buf = new BufferedReader(new InputStreamReader(body, charset))) {
-                log.trace("Input stream: {}", buf.lines().collect(Collectors.joining()));
+                return Collections.emptyIterator();
+            } else try {
+                List<JsonStation> jstations = jsonb.fromJson(body, JsonStationArrayType);
+                @SuppressWarnings("unchecked")
+                List<Station> stations = (List<Station>)(List<?>)jstations;
+                return stations.iterator();
+            } catch (JsonbException e) {
+                throw new IOException("Cannot deserialize response body as JSON", e);
             }
-            return Collections.emptyIterator();
         }
     }
 }
