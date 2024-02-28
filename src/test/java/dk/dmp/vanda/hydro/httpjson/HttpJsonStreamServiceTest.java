@@ -24,34 +24,34 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class StreamHttpClientTest {
+class HttpJsonStreamServiceTest {
     @Mock HttpClient client;
 
     @Test
     void testConstructionFail() {
-        assertThrows(NullPointerException.class, () -> new StreamHttpClient(null));
+        assertThrows(NullPointerException.class, () -> new HttpJsonStreamService(null, client));
     }
 
     @Test
-    void testRequest400ThrowsNullBody(@Mock HttpResponse<InputStream> response) throws IOException, InterruptedException {
+    void testRequest400ThrowsNullBody(@Mock HttpResponse<InputStream> response) throws IOException, InterruptedException, URISyntaxException {
         HttpHeaders headers = HttpHeaders.of(Collections.emptyMap(), (k,v) -> true);
         when(response.statusCode()).thenReturn(400);
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(null);
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        StreamHttpClient service = new StreamHttpClient(client);
-        assertThrows(HttpResponseException.class, () -> service.submit(new URI("http://localhost/api/op?foo=bar")));
+        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
+        assertThrows(HttpResponseException.class, () -> service.submit("op?foo=bar"));
     }
 
     @Test
-    void testRequest400ThrowsSomeBody(@Mock HttpResponse<InputStream> response) throws IOException, InterruptedException {
+    void testRequest400ThrowsSomeBody(@Mock HttpResponse<InputStream> response) throws IOException, InterruptedException, URISyntaxException {
         HttpHeaders headers = HttpHeaders.of(Map.of("Content-Type", Collections.singletonList("artificial/mediatype; charset=utf-8")), (k, v) -> true);
         when(response.statusCode()).thenReturn(400);
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(InputStream.nullInputStream());
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        StreamHttpClient service = new StreamHttpClient(client);
-        assertThrows(HttpResponseException.class, () -> service.submit(new URI("http://localhost/api/op?foo=bar")));
+        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
+        assertThrows(HttpResponseException.class, () -> service.submit("op?foo=bar"));
     }
 
     @Test
@@ -61,16 +61,15 @@ class StreamHttpClientTest {
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(null);
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        StreamHttpClient service = new StreamHttpClient(client);
-        ExtendedHttpResponse<InputStream> received = service.submit(new URI("http://localhost/api/op?foo=bar"));
+        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
+        try (InputStream is = service.submit("op?foo=bar")) {
+            assertNull(is);
+        }
         ArgumentCaptor<HttpRequest> req = ArgumentCaptor.forClass(HttpRequest.class);
         verify(client).send(req.capture(), any());
         assertEquals(new URI("http://localhost/api/op?foo=bar"), req.getValue().uri());
         assertEquals("GET", req.getValue().method());
         assertEquals(Optional.of("application/json"), req.getValue().headers().firstValue("Accept"));
-        try (InputStream is = received.body()) {
-            assertNull(is);
-        }
     }
 
     @Test
@@ -80,15 +79,14 @@ class StreamHttpClientTest {
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(InputStream.nullInputStream());
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        StreamHttpClient service = new StreamHttpClient(client);
-        ExtendedHttpResponse<InputStream> received = service.submit(new URI("http://localhost/api/op?foo=bar"));
+        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
+        try (InputStream is = service.submit("op?foo=bar")) {
+            assertEquals(-1, is.read());
+        }
         ArgumentCaptor<HttpRequest> req = ArgumentCaptor.forClass(HttpRequest.class);
         verify(client).send(req.capture(), any());
         assertEquals(new URI("http://localhost/api/op?foo=bar"), req.getValue().uri());
         assertEquals("GET", req.getValue().method());
         assertEquals(Optional.of("application/json"), req.getValue().headers().firstValue("Accept"));
-        try (InputStream is = received.body()) {
-            assertEquals(-1, is.read());
-        }
     }
 }

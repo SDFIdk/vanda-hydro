@@ -3,18 +3,18 @@ package dk.dmp.vanda.hydro.httpjson;
 import dk.dmp.vanda.hydro.Station;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
 import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class HydrometryHttpServiceIT {
+class HydrometryServiceIT {
     @Test
-    void testStations() throws IOException, InterruptedException {
+    void testStations() throws Exception {
         URI endpoint = URI.create("https://vandah.test.miljoeportal.dk/api/");
-        try (StreamHttpClient http = new StreamHttpClient();
-             HydrometryHttpService service = new HydrometryHttpService(endpoint, http)
+        try (HttpClient http = HttpClient.newHttpClient();
+             HydrometryService service = new HydrometryService(new HttpJsonStreamService(endpoint, http))
         ) {
             Iterator<Station> iter = service.getStations().stationId("61000181").exec();
             Station station = iter.next();

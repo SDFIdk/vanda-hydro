@@ -64,27 +64,4 @@ public class OperationPathAndParameters {
             String qs = getQueryString();
             return (path != null ? path : "") + (qs.isEmpty() ? "" : "?") + qs;
     }
-
-    /**
-     * Append the path and query to a given API base URL. This is not
-     * the same as {@link URI#resolve(URI)}, since the whole base URL is
-     * preserved in the result.
-     * @param apiBase The URL on which to append the path and query.
-     * @return The combined URL with base, path and query.
-     * @throws IllegalArgumentException If the given URI is not a URL
-     * @throws RuntimeException If the combined URL violates RFC 2396.
-     */
-    public URI appendToURL(URI apiBase) {
-        if (apiBase.isOpaque())
-            throw new IllegalArgumentException("apiBase is not a URL: " + apiBase);
-        String base = apiBase.toString();
-        if (base.endsWith("/")) base = base.substring(0, base.length() - 1);
-        String pathAndQuery = toString();
-        if (pathAndQuery.startsWith("/")) pathAndQuery = pathAndQuery.substring(1);
-        try {
-            return new URI(base + "/" + pathAndQuery);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Internal error. Relative path or query parameters not properly escaped.", e);
-        }
-    }
 }

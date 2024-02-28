@@ -1,19 +1,14 @@
 package dk.dmp.vanda.hydro.httpjson;
 
-import dk.dmp.vanda.hydro.HydrometryService;
 import dk.dmp.vanda.hydro.Station;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
-import java.net.URI;
-import java.nio.charset.Charset;
+import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -23,32 +18,16 @@ import java.util.*;
  * The implementation is immutable, thus thread-safe.
  * However, the operations builders are not.
  */
-public class HydrometryHttpService implements HydrometryService, AutoCloseable {
-    private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+public class HydrometryService implements dk.dmp.vanda.hydro.HydrometryService, AutoCloseable {
     private final Jsonb jsonb = JsonbBuilder.create();
-    private final URI apiBase;
-    private final StreamHttpClient httpClient;
+    private final JsonStreamService streamService;
 
     /**
      * Construct the service client.
-     * @param apiBase Base URL of VanDa Hydro service, e.g.
-     *         {@code https://vandah.miljoeportal.dk/api/},
-     *         {@code https://vandah.test.miljoeportal.dk/api/} or
-     *         {@code https://vandah.demo.miljoeportal.dk/api/}
-     * @param httpClient The client for sending HTTP requests.
+     * @param streamService A basic service layer.
      */
-    public HydrometryHttpService(URI apiBase, StreamHttpClient httpClient) {
-        if (apiBase.getPath() == null) {
-            throw new IllegalArgumentException(String.format("Given VanDa Hydrometry API base URL has no path component: %s", apiBase));
-        }
-        else if (! apiBase.getPath().endsWith("/")) {
-            log.warn("Given VanDa Hydrometry API base URL does not end with '/': {}", apiBase);
-        }
-        else if (! apiBase.getPath().equals("/api/")) {
-            log.debug("Given VanDa Hydrometry API base URL does not end with '/api/': {}", apiBase);
-        }
-        this.apiBase = apiBase;
-        this.httpClient = httpClient;
+    public HydrometryService(JsonStreamService streamService) {
+        this.streamService = streamService;
     }
 
     @Override
@@ -81,18 +60,11 @@ public class HydrometryHttpService implements HydrometryService, AutoCloseable {
 
     /**
      * Closes the internal JSON-B deserializer.
-     * <p>NB! Does not close the given HTTP client.</p>
      * @throws IOException If thrown by JSON-B.
      */
     @Override
-    public void close() throws IOException {
-        try {
-            jsonb.close();
-        } catch (IOException e) {
-            throw e;
-        } catch (Exception e) {
-            throw new RuntimeException("Unexpected exception thrown by JSON-B on close", e);
-        }
+    public void close() throws Exception {
+        jsonb.close();
     }
 
     private static final Type JsonStationArrayType = new LinkedList<JsonStation>(){}.getClass().getGenericSuperclass();
@@ -104,8 +76,11 @@ public class HydrometryHttpService implements HydrometryService, AutoCloseable {
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            ExtendedHttpResponse<InputStream> response = httpClient.submit(form.appendToURL(apiBase));
-            return transform(response.body(), response.determineCharset());
+            try {
+                return transform(streamService.submit(form.toString()));
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("Internal error. Relative path or query parameters not properly escaped.", e);
+            }
         }
 
         @Override
@@ -150,7 +125,7 @@ public class HydrometryHttpService implements HydrometryService, AutoCloseable {
             return this;
         }
 
-        private Iterator<Station> transform(InputStream body, Charset charset) throws IOException {
+        private Iterator<Station> transform(InputStream body) throws IOException {
             if (body == null) {
                 return Collections.emptyIterator();
             } else try {
