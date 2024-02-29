@@ -4,6 +4,7 @@ import dk.dmp.vanda.hydro.Station;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbException;
+import org.apache.commons.io.input.ObservableInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,7 +28,7 @@ public class HydrometryService implements dk.dmp.vanda.hydro.HydrometryService, 
      * @param streamService A basic service layer.
      */
     public HydrometryService(JsonStreamService streamService) {
-        this.streamService = streamService;
+        this.streamService = Objects.requireNonNull(streamService);
     }
 
     @Override
@@ -121,21 +122,43 @@ public class HydrometryService implements dk.dmp.vanda.hydro.HydrometryService, 
 
         @Override
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
-            form.addQueryParameter("pointInTime", pointInTime.format(RFC_3339_NO_SECONDS));
+            form.addQueryParameter("withResultsAfter", pointInTime.format(RFC_3339_NO_SECONDS));
             return this;
         }
 
         private Iterator<Station> transform(InputStream body) throws IOException {
+            WhitespaceObserver w = new WhitespaceObserver();
             if (body == null) {
                 return Collections.emptyIterator();
             } else try {
-                List<JsonStation> jstations = jsonb.fromJson(body, JsonStationArrayType);
+                ObservableInputStream is = new ObservableInputStream(body, w);
+                List<JsonStation> jstations = jsonb.fromJson(is, JsonStationArrayType);
                 @SuppressWarnings("unchecked")
                 List<Station> stations = (List<Station>)(List<?>)jstations;
                 return stations.iterator();
             } catch (JsonbException e) {
-                throw new IOException("Cannot deserialize response body as JSON", e);
+                if (w.hasObservedOnlyWhitespace()) return Collections.emptyIterator();
+                else throw new IOException("Cannot deserialize response body as JSON", e);
             }
+        }
+    }
+
+    private static class WhitespaceObserver extends ObservableInputStream.Observer {
+        private boolean observedOnlyWhitespace = true;
+
+        public boolean hasObservedOnlyWhitespace() {
+            return observedOnlyWhitespace;
+        }
+
+        @Override
+        public void data(byte[] buffer, int offset, int length) {
+            for (int i = offset, n = length; observedOnlyWhitespace && n > 0; ++i, --n)
+                data(buffer[i]);
+        }
+
+        @Override
+        public void data(int value) {
+            if (observedOnlyWhitespace && !Character.isWhitespace(value)) observedOnlyWhitespace = false;
         }
     }
 }
