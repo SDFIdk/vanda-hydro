@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collections;
@@ -27,14 +26,15 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class HydrometryServiceTest {
-    @Mock JsonStreamService streamLayer;
+class HydrometryServiceClientTest {
+    @Mock
+    StreamService streamLayer;
     HydrometryService service;
     Station a;
 
     @BeforeEach
     void setUp() {
-        service = new dk.dmp.vanda.hydro.httpjson.HydrometryService(streamLayer);
+        service = new HydrometryServiceClient(streamLayer);
 
         GeometryFactory gf = new GeometryFactory(new PrecisionModel(), 25832);
         JsonStation s = new JsonStation();
@@ -60,17 +60,17 @@ class HydrometryServiceTest {
 
     @AfterEach
     void tearDown() throws Exception {
-        ((dk.dmp.vanda.hydro.httpjson.HydrometryService)service).close();
+        ((HydrometryServiceClient)service).close();
     }
 
     @Test
-    void testStationsNoParameters() throws IOException, InterruptedException, URISyntaxException {
+    void testStationsNoParameters() throws IOException, InterruptedException {
         service.getStations().exec();
-        verify(streamLayer).submit("stations");
+        verify(streamLayer).get("stations", "");
     }
 
     @Test
-    void testStationsSomeParameters() throws IOException, InterruptedException, URISyntaxException {
+    void testStationsSomeParameters() throws IOException, InterruptedException {
         service.getStations()
             .stationId("61000181")
             .operatorStationId("610181")
@@ -80,8 +80,8 @@ class HydrometryServiceTest {
             .examinationTypeSc(27)
             .withResultsAfter(OffsetDateTime.of(2024,2,29, 10,10,10,0, ZoneOffset.ofHours(1)))
             .exec();
-        verify(streamLayer).submit("stations" +
-            "?stationId=61000181&operatorStationId=610181" +
+        verify(streamLayer).get("stations",
+            "stationId=61000181&operatorStationId=610181" +
             "&stationOwnerCvr=DK25798376&operatorCvr=12345678-9012" +
             "&parameterSc=25&examinationTypeSc=27" +
             "&withResultsAfter=2024-02-29T10%3A10%2B01%3A00");
@@ -94,37 +94,37 @@ class HydrometryServiceTest {
     }
 
     @Test
-    void testStationsEmptyResponse() throws IOException, InterruptedException, URISyntaxException {
-        when(streamLayer.submit(any())).thenReturn(InputStream.nullInputStream());
+    void testStationsEmptyResponse() throws IOException, InterruptedException {
+        when(streamLayer.get(any(), any())).thenReturn(InputStream.nullInputStream());
         Iterator<Station> stations = service.getStations().exec();
         assertFalse(stations.hasNext());
     }
 
     @Test
-    void testStationsSpaceResponse() throws IOException, InterruptedException, URISyntaxException {
-        when(streamLayer.submit(any())).thenReturn(new ByteArrayInputStream(new byte[]{' ', '\t', '\f', '\r', '\n'}));
+    void testStationsSpaceResponse() throws IOException, InterruptedException {
+        when(streamLayer.get(any(), any())).thenReturn(new ByteArrayInputStream(new byte[]{' ', '\t', '\f', '\r', '\n'}));
         Iterator<Station> stations = service.getStations().exec();
         assertFalse(stations.hasNext());
     }
 
     @Test
-    void testStationsSomeResponse() throws IOException, InterruptedException, URISyntaxException {
-        when(streamLayer.submit(any())).thenReturn(getClass().getResourceAsStream("stations.json"));
+    void testStationsSomeResponse() throws IOException, InterruptedException {
+        when(streamLayer.get(any(), any())).thenReturn(getClass().getResourceAsStream("stations.json"));
         Iterator<Station> stations = service.getStations().exec();
         assertEquals(a, stations.next());
         assertFalse(stations.hasNext());
     }
 
     @Test
-    void testStationsInvalidResponse() throws IOException, InterruptedException, URISyntaxException {
-        when(streamLayer.submit(any())).thenReturn(new ByteArrayInputStream(new byte[]{'X'}));
+    void testStationsInvalidResponse() throws IOException, InterruptedException {
+        when(streamLayer.get(any(), any())).thenReturn(new ByteArrayInputStream(new byte[]{'X'}));
         assertThrows(IOException.class, () -> service.getStations().exec());
     }
 
     @Test
-    void testStationsFail(@Mock HttpResponseException response) throws IOException, InterruptedException, URISyntaxException {
+    void testStationsFail(@Mock HttpResponseException response) throws IOException, InterruptedException {
         when(response.statusCode()).thenReturn(400);
-        when(streamLayer.submit(any())).thenThrow(response);
+        when(streamLayer.get(any(), any())).thenThrow(response);
         try {
             service.getStations().exec();
             fail();

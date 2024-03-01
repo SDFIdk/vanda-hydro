@@ -12,7 +12,7 @@ import java.util.StringJoiner;
  * HTTP form data.
  * @see <a href="https://www.w3.org/TR/2014/REC-html5-20141028/forms.html#url-encoded-form-data">HTML 5: 4.10.22.6 URL-encoded form data</a>
  */
-public class OperationPathAndParameters {
+public class URLEncodedPathAndQuery {
     private String path;
     private final StringJoiner params = new StringJoiner("&");
 
@@ -32,12 +32,16 @@ public class OperationPathAndParameters {
         }
     }
 
+    public String getPath() {
+        return path;
+    }
+
     /**
-     * Add and encode query parameter.
+     * Append query parameter.
      * @param parm Query parameter name.
      * @param value Query parameter value.
      */
-    public void addQueryParameter(String parm, String value) {
+    public void append(String parm, String value) {
         Objects.requireNonNull(parm, "parm cannot be null");
         StringBuilder b = new StringBuilder(urlEncode(parm));
         if (value != null) b.append("=").append(urlEncode(value));
@@ -52,7 +56,7 @@ public class OperationPathAndParameters {
      * HTTP form data.
      * @return The query string, or {@code null} if the query is empty.
      */
-    public String getQueryString() {
+    public String getQuery() {
         return params.toString();
     }
 
@@ -61,7 +65,7 @@ public class OperationPathAndParameters {
      * @return The created relative URL.
      */
     public String toString() {
-            String qs = getQueryString();
-            return (path != null ? path : "") + (qs.isEmpty() ? "" : "?") + qs;
+        String q = getQuery();
+        return (path != null ? path : "") + (q.isEmpty() ? "" : "?") + q;
     }
 }

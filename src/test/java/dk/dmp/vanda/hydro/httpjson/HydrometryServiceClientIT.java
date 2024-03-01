@@ -9,12 +9,12 @@ import java.util.Iterator;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class HydrometryServiceIT {
+class HydrometryServiceClientIT {
     @Test
     void testStations() throws Exception {
         URI endpoint = URI.create("https://vandah.test.miljoeportal.dk/api/");
         try (HttpClient http = HttpClient.newHttpClient();
-             HydrometryService service = new HydrometryService(new HttpJsonStreamService(endpoint, http))
+             HydrometryServiceClient service = new HydrometryServiceClient(new JsonStreamHttpClient(endpoint, http))
         ) {
             Iterator<Station> iter = service.getStations().stationId("61000181").exec();
             Station station = iter.next();

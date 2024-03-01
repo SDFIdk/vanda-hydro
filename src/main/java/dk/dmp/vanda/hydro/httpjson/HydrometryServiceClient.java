@@ -1,5 +1,6 @@
 package dk.dmp.vanda.hydro.httpjson;
 
+import dk.dmp.vanda.hydro.HydrometryService;
 import dk.dmp.vanda.hydro.Station;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
@@ -9,7 +10,6 @@ import org.apache.commons.io.input.ObservableInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
-import java.net.URISyntaxException;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -19,21 +19,21 @@ import java.util.*;
  * The implementation is immutable, thus thread-safe.
  * However, the operations builders are not.
  */
-public class HydrometryService implements dk.dmp.vanda.hydro.HydrometryService, AutoCloseable {
+public class HydrometryServiceClient implements HydrometryService, AutoCloseable {
     private final Jsonb jsonb = JsonbBuilder.create();
-    private final JsonStreamService streamService;
+    private final StreamService streamService;
 
     /**
      * Construct the service client.
-     * @param streamService A basic service layer.
+     * @param streamService A service that delivers JSON stream data.
      */
-    public HydrometryService(JsonStreamService streamService) {
+    public HydrometryServiceClient(StreamService streamService) {
         this.streamService = Objects.requireNonNull(streamService);
     }
 
     @Override
     public GetStationsOperation getStations() {
-        return new StationsHttpRequest();
+        return new StationsRequest();
     }
 
     @Override
@@ -69,60 +69,56 @@ public class HydrometryService implements dk.dmp.vanda.hydro.HydrometryService, 
     }
 
     private static final Type JsonStationArrayType = new LinkedList<JsonStation>(){}.getClass().getGenericSuperclass();
-    private class StationsHttpRequest implements GetStationsOperation {
-        private final OperationPathAndParameters form = new OperationPathAndParameters();
+    private class StationsRequest implements GetStationsOperation {
+        private final URLEncodedPathAndQuery form = new URLEncodedPathAndQuery();
         {
             form.setPath("stations");
         }
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            try {
-                return transform(streamService.submit(form.toString()));
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("Internal error. Relative path or query parameters not properly escaped.", e);
-            }
+            return transform(streamService.get(form.getPath(), form.getQuery()));
         }
 
         @Override
         public GetStationsOperation stationId(String stationId) {
-            form.addQueryParameter("stationId", stationId);
+            form.append("stationId", stationId);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorStationId(String operatorStationId) {
-            form.addQueryParameter("operatorStationId", operatorStationId);
+            form.append("operatorStationId", operatorStationId);
             return this;
         }
 
         @Override
         public GetStationsOperation stationOwnerCvr(String stationOwnerCvr) {
-            form.addQueryParameter("stationOwnerCvr", stationOwnerCvr);
+            form.append("stationOwnerCvr", stationOwnerCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation operatorCvr(String operatorCvr) {
-            form.addQueryParameter("operatorCvr", operatorCvr);
+            form.append("operatorCvr", operatorCvr);
             return this;
         }
 
         @Override
         public GetStationsOperation parameterSc(int parameterSc) {
-            form.addQueryParameter("parameterSc", String.valueOf(parameterSc));
+            form.append("parameterSc", String.valueOf(parameterSc));
             return this;
         }
 
         @Override
         public GetStationsOperation examinationTypeSc(int examinationTypeSc) {
-            form.addQueryParameter("examinationTypeSc", String.valueOf(examinationTypeSc));
+            form.append("examinationTypeSc", String.valueOf(examinationTypeSc));
             return this;
         }
 
         @Override
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
-            form.addQueryParameter("withResultsAfter", pointInTime.format(RFC_3339_NO_SECONDS));
+            form.append("withResultsAfter", pointInTime.format(RFC_3339_NO_SECONDS));
             return this;
         }
 
@@ -143,6 +139,10 @@ public class HydrometryService implements dk.dmp.vanda.hydro.HydrometryService, 
         }
     }
 
+    /**
+     * Poor mans check for empty input stream: works only for ASCII-like
+     * encodings, e.g. UTF-8.
+     */
     private static class WhitespaceObserver extends ObservableInputStream.Observer {
         private boolean observedOnlyWhitespace = true;
 

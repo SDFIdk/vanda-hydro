@@ -24,12 +24,12 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class HttpJsonStreamServiceTest {
+class JsonStreamHttpClientTest {
     @Mock HttpClient client;
 
     @Test
     void testConstructionFail() {
-        assertThrows(NullPointerException.class, () -> new HttpJsonStreamService(null, client));
+        assertThrows(NullPointerException.class, () -> new JsonStreamHttpClient(null, client));
     }
 
     @Test
@@ -39,8 +39,8 @@ class HttpJsonStreamServiceTest {
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(null);
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
-        assertThrows(HttpResponseException.class, () -> service.submit("op?foo=bar"));
+        JsonStreamHttpClient service = new JsonStreamHttpClient(new URI("http://localhost/api/"), client);
+        assertThrows(HttpResponseException.class, () -> service.get("op", "foo=bar"));
     }
 
     @Test
@@ -50,8 +50,8 @@ class HttpJsonStreamServiceTest {
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(InputStream.nullInputStream());
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
-        assertThrows(HttpResponseException.class, () -> service.submit("op?foo=bar"));
+        JsonStreamHttpClient service = new JsonStreamHttpClient(new URI("http://localhost/api/"), client);
+        assertThrows(HttpResponseException.class, () -> service.get("op", "foo=bar"));
     }
 
     @Test
@@ -61,8 +61,8 @@ class HttpJsonStreamServiceTest {
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(null);
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
-        try (InputStream is = service.submit("op?foo=bar")) {
+        JsonStreamHttpClient service = new JsonStreamHttpClient(new URI("http://localhost/api/"), client);
+        try (InputStream is = service.get("op", "foo=bar")) {
             assertNull(is);
         }
         ArgumentCaptor<HttpRequest> req = ArgumentCaptor.forClass(HttpRequest.class);
@@ -79,8 +79,8 @@ class HttpJsonStreamServiceTest {
         when(response.headers()).thenReturn(headers);
         when(response.body()).thenReturn(InputStream.nullInputStream());
         when(client.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<InputStream>>any())).thenReturn(response);
-        HttpJsonStreamService service = new HttpJsonStreamService(new URI("http://localhost/api/"), client);
-        try (InputStream is = service.submit("op?foo=bar")) {
+        JsonStreamHttpClient service = new JsonStreamHttpClient(new URI("http://localhost/api/"), client);
+        try (InputStream is = service.get("op", "foo=bar")) {
             assertEquals(-1, is.read());
         }
         ArgumentCaptor<HttpRequest> req = ArgumentCaptor.forClass(HttpRequest.class);
