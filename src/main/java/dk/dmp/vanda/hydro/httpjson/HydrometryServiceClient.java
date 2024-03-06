@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
@@ -118,7 +119,15 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
-            form.append("withResultsAfter", pointInTime.format(RFC_3339_NO_SECONDS));
+            // NB! Offset must be Z or +01:00, i.e. UTC.
+            form.append("withResultsAfter", pointInTime.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS));
+            return this;
+        }
+
+        @Override
+        public GetStationsOperation withResultsCreatedAfter(OffsetDateTime pointInTime) {
+            // NB! Offset must be Z or +01:00, i.e. UTC.
+            form.append("withResultsCreatedAfter", pointInTime.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS));
             return this;
         }
 

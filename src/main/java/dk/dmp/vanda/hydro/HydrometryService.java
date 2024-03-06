@@ -53,20 +53,26 @@ public interface HydrometryService {
         GetStationsOperation operatorCvr(String operatorCvr);
 
         /**
-         * Query by measured parameter as stancode.
+         * Query by measured parameter as stancode from stancodelist 1008.
          */
         GetStationsOperation parameterSc(int parameterSc);
 
         /**
-         * Query by examination type as stancode.
+         * Query by examination type as stancode from stancodelist 1101.
          */
         GetStationsOperation examinationTypeSc(int examinationTypeSc);
 
         /**
-         * Filter the results after a point in time.
-         * Note that components after minute are ignored.
+         * Return only stations with measurements taken after a point in time.
+         * Note that time components after minute are ignored.
          */
         GetStationsOperation withResultsAfter(OffsetDateTime pointInTime);
+
+        /**
+         * Return only stations with measurements registered after a point in time.
+         * Note that time components after minute are ignored.
+         */
+        GetStationsOperation withResultsCreatedAfter(OffsetDateTime pointInTime);
     }
 
     /**
@@ -101,23 +107,30 @@ public interface HydrometryService {
         GetWaterLevelsOperation measurementPointNumber(int measurementPointNumber);
 
         /**
-         * Query from the given timestamp.
+         * Query measurements taken from the given point in time, inclusive.
          * Both from and
-         * {@linkplain #to(OffsetDateTime) to} must be specified if one
-         * of them is present.
-         * Note that components after minute are ignored.
+         * {@linkplain #to(OffsetDateTime) to} must be specified if either
+         * of them is.
+         * Note that time components after minute are ignored.
          * If not specified, return data for the last 24 hours.
          */
         GetWaterLevelsOperation from(OffsetDateTime pointInTime);
 
         /**
-         * Query until the given timestamp.
+         * Query measurements taken until the given timestamp, inclusive.
          * Both {@linkplain #from(OffsetDateTime) from} and
-         * to must be specified if one
-         * of them is present.
-         * Note that components after minute are ignored.
+         * to must be specified if either
+         * of them is.
+         * Note that time components after minute are ignored.
          * If not specified, return data for the last 24 hours.
          */
         GetWaterLevelsOperation to(OffsetDateTime pointInTime);
+
+        /**
+         * Query measurements registered (created or updated) from the
+         * given point in time, inclusive.
+         * Note that time components after minute are ignored.
+         */
+        GetWaterLevelsOperation createdAfter(OffsetDateTime pointInTime);
     }
 }

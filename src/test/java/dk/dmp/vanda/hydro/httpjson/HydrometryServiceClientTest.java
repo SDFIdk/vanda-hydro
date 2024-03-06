@@ -79,12 +79,14 @@ class HydrometryServiceClientTest {
             .parameterSc(25)
             .examinationTypeSc(27)
             .withResultsAfter(OffsetDateTime.of(2024,2,29, 10,10,10,0, ZoneOffset.ofHours(1)))
+            .withResultsCreatedAfter(OffsetDateTime.of(2024,3,6, 15,3,10,0, ZoneOffset.ofHours(1)))
             .exec();
         verify(streamLayer).get("stations",
             "stationId=61000181&operatorStationId=610181" +
             "&stationOwnerCvr=DK25798376&operatorCvr=12345678-9012" +
             "&parameterSc=25&examinationTypeSc=27" +
-            "&withResultsAfter=2024-02-29T10%3A10%2B01%3A00");
+            "&withResultsAfter=2024-02-29T09%3A10Z" +
+            "&withResultsCreatedAfter=2024-03-06T14%3A03Z");
     }
 
     @Test
