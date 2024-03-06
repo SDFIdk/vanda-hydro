@@ -7,32 +7,32 @@ import java.time.OffsetDateTime;
  */
 public interface Examination {
     /**
-     * Get the name of the measured parameter.
-     * @return Parameter name.
+     * Get the denotation of the property being measured.
+     * @return Measured parameter.
      */
     String parameter();
 
     /**
-     * Get the stancode of the measured parameter.
-     * @return Parameter stancode.
+     * Get the stancode of the property being measured.
+     * @return Measured parameter.
      */
     Integer parameterSc();
 
     /**
-     * Get the type of examination.
+     * Get the denotation of the type of examination.
      * @return Examination type name.
      */
     String examinationType();
 
     /**
-     * Get the type of examination as stancode.
+     * Get the stancode of the type of examination.
      * @return Examination type stancode.
      */
     Integer examinationTypeSc();
 
     /**
-     * Get the unit of measurement.
-     * @return Unit name.
+     * Get the symbol of the unit of measurement.
+     * @return Unit symbol.
      */
     String unit();
 
@@ -44,13 +44,13 @@ public interface Examination {
 
     /**
      * Get the time when the earliest measurement was taken.
-     * @return The time of the earliest examination.
+     * @return Earliest examination time.
      */
     OffsetDateTime earliestResult();
 
     /**
      * Get the time when the lastest measurement was taken.
-     * @return The time of the lastest examination.
+     * @return Lastest examination time.
      */
     OffsetDateTime latestResult();
 }

@@ -16,19 +16,19 @@ public interface MeasurementPoint {
     int number();
 
     /**
-     * Get the name of the measurement point.
-     * @return Measurement point name.
+     * Get the denotation of the measurement point.
+     * @return Measurement point denotation.
      */
     String name();
 
     /**
-     * Get the type of the measurement point.
+     * Get the denotation of the type of measurement point.
      * @return Measurement point type name.
      */
     String measurementPointType();
 
     /**
-     * Get the type of the measurement point as stancode.
+     * Get the stancode of the type of measurement point.
      * @return Measurement point type stancode.
      */
     Integer measurementPointTypeSc();
@@ -40,8 +40,8 @@ public interface MeasurementPoint {
     String description();
 
     /**
-     * Get the geographical location of the measurement point.
-     * @return Location in UTM zone 32N coordinates.
+     * Get the projected planar coordinate (in UTM zone 32N) of the measurement point.
+     * @return Planar coordinate of measurement point.
      */
     Point location();
 
@@ -52,8 +52,8 @@ public interface MeasurementPoint {
     Integer intakeNumber();
 
     /**
-     * Get the examinations performed on the measurement point.
-     * @return Examinations performed on the measurement point.
+     * Get the examinations performed at the measurement point.
+     * @return Examinations at measurement point.
      */
     List<Examination> examinations();
 }

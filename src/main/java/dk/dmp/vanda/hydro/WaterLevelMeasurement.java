@@ -7,8 +7,9 @@ import java.time.OffsetDateTime;
  */
 public interface WaterLevelMeasurement {
     /**
-     * Get the measurement point number.
-     * @return Measurement point number.
+     * Get the number (starting from 1) of this measurement point in the
+     * station.
+     * @return Measurement point number in a station.
      */
     int measurementPointNumber();
 
@@ -19,7 +20,7 @@ public interface WaterLevelMeasurement {
     int parameterSc();
 
     /**
-     * Get the name of the property being measured.
+     * Get the denotation of the property being measured.
      * @return Measured parameter.
      */
     String parameter();
@@ -44,13 +45,13 @@ public interface WaterLevelMeasurement {
 
     /**
      * Get the measured value.
-     * @return Measurement.
+     * @return Measured value.
      */
     double result();
 
     /**
-     * Get the result corrected for measuring equipment elevation offset.
-     * Only available for water level, and only if different from measured value.
+     * Get the result corrected for measuring equipment elevation.
+     * Only available if different from measured value.
      * @return Elevation corrected measurement.
      */
     Double resultElevationCorrected();

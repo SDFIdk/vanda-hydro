@@ -18,33 +18,33 @@ public interface Station {
     /**
      * Get the unique VanDa Hydro station ID.
      * Often the same as the old obsStedNr.
-     * @return The 8-digit station ID, a.k.a. obsStedNr.
+     * @return The 8-digit station ID.
      */
     String stationId();
 
     /**
-     * Get the station ID, a.k.a. ejerStedNr, as known by the operator
-     * of the station.
+     * Get the station ID assigned by the operator of the station.
      * This is normally 6 or 8 digits, if it exists.
-     * @return Operator station id, a.k.a. ejerStedNr.
+     * Previously known as ejerStedNr.
+     * @return Operator station ID, a.k.a. ejerStedNr.
      */
     String operatorStationId();
 
     /**
-     * Get the station number, a.k.a. obsStedNr, as known by the old Hydrometri API.
+     * Get the station number previously known as obsStedNr in the old Hydrometri API.
      * This is normally 8 digits, if it exists.
      * @return Old 8-digit station number, a.k.a. obsStedNr.
      */
     String oldStationNumber();
 
     /**
-     * Get the location type name, e.g. "Vandløb" or "Pumpestation".
+     * Get the denotation of the type of location, e.g. "Vandløb" or "Pumpestation".
      * @return Location type name.
      */
     String locationType();
 
     /**
-     * Get the location type as stancode.
+     * Get the stancode of the type of location.
      * @return Location type stancode.
      */
     int locationTypeSc();
@@ -80,8 +80,9 @@ public interface Station {
     String name();
 
     /**
-     * Get a description of the station, similar to the old locality,
+     * Get a description of the station,
      * sometimes including the size of the catchment area.
+     * Maybe similar to the old locality.
      * @return Station description.
      */
     String description();
@@ -93,8 +94,8 @@ public interface Station {
     String loggerId();
 
     /**
-     * Get the geographical location of the station.
-     * @return Location in UTM zone 32N coordinates.
+     * Get the projected planar coordinate (in UTM zone 32N) of the station.
+     * @return Planar coordinate of measurement point.
      */
     Point location();
 
