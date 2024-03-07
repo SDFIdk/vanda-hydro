@@ -43,27 +43,6 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
     }
 
     /**
-     * According to the OpenAPI specification of the service in test,
-     * all input timestamp arguments must be given as a UTC timestamps in
-     * the RFC 3339 date+time format without seconds.
-     */
-    private static String formatUTCRFC3339NoSeconds(OffsetDateTime t) {
-        return t.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS);
-    }
-    private static final DateTimeFormatter RFC_3339_NO_SECONDS =
-            new DateTimeFormatterBuilder()
-                    .parseCaseInsensitive()
-                    .append(DateTimeFormatter.ISO_LOCAL_DATE)
-                    .appendLiteral('T')
-                    .appendValue(java.time.temporal.ChronoField.HOUR_OF_DAY, 2)
-                    .appendLiteral(':')
-                    .appendValue(java.time.temporal.ChronoField.MINUTE_OF_HOUR, 2)
-                    .parseLenient()
-                    .appendOffsetId()
-                    .parseStrict()
-                    .toFormatter();
-
-    /**
      * Closes the internal JSON-B deserializer.
      * @throws IOException If thrown by JSON-B.
      */
@@ -74,14 +53,14 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
     private static final Type JsonStationArrayType = new LinkedList<JsonStation>(){}.getClass().getGenericSuperclass();
     private class StationsRequest implements GetStationsOperation {
-        private final URLEncodedPathAndQuery form = new URLEncodedPathAndQuery();
+        private final URLEncodedFormData form = new URLEncodedFormData();
         {
             form.setPath("stations");
         }
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            return transform(streamService.get(form.getPath(), form.getQuery()));
+            return transform(streamService.get(form.getPath(), form.getFormData()));
         }
 
         @Override
@@ -148,6 +127,27 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             }
         }
     }
+
+    /**
+     * According to the OpenAPI specification of the service in test,
+     * all input timestamp arguments must be given as a UTC timestamps in
+     * the RFC 3339 date+time format without seconds.
+     */
+    private static String formatUTCRFC3339NoSeconds(OffsetDateTime t) {
+        return t.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS);
+    }
+    private static final DateTimeFormatter RFC_3339_NO_SECONDS =
+        new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .append(DateTimeFormatter.ISO_LOCAL_DATE)
+            .appendLiteral('T')
+            .appendValue(java.time.temporal.ChronoField.HOUR_OF_DAY, 2)
+            .appendLiteral(':')
+            .appendValue(java.time.temporal.ChronoField.MINUTE_OF_HOUR, 2)
+            .parseLenient()
+            .appendOffsetId()
+            .parseStrict()
+            .toFormatter();
 
     /**
      * Poor man's check for empty input stream: works only for ASCII-like

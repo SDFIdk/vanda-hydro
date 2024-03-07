@@ -8,16 +8,16 @@ import java.util.Objects;
 import java.util.StringJoiner;
 
 /**
- * Encode query parameters according to the convensions for encoding
- * HTTP form data.
+ * Encode parameters according to the convensions for encoding
+ * HTML form data.
  * @see <a href="https://www.w3.org/TR/2014/REC-html5-20141028/forms.html#url-encoded-form-data">HTML 5: 4.10.22.6 URL-encoded form data</a>
  */
-public class URLEncodedPathAndQuery {
+public class URLEncodedFormData {
     private String path;
     private final StringJoiner params = new StringJoiner("&");
 
     /**
-     * Set and encode the target path.
+     * Set and encode the target path, a.k.a. relative action URL.
      * @param path Absolute or relative path.
      * @throws IllegalArgumentException If the path is not parseable by
      * {@link URI#URI(String, String, String, String, String)}.
@@ -37,13 +37,13 @@ public class URLEncodedPathAndQuery {
     }
 
     /**
-     * Append query parameter.
-     * @param parm Query parameter name.
-     * @param value Query parameter value.
+     * Append parameter.
+     * @param name Parameter name.
+     * @param value Parameter value.
      */
-    public void append(String parm, String value) {
-        Objects.requireNonNull(parm, "parm cannot be null");
-        StringBuilder b = new StringBuilder(urlEncode(parm));
+    public void append(String name, String value) {
+        Objects.requireNonNull(name, "Parameter name cannot be null");
+        StringBuilder b = new StringBuilder(urlEncode(name));
         if (value != null) b.append("=").append(urlEncode(value));
         params.add(b.toString());
     }
@@ -52,20 +52,20 @@ public class URLEncodedPathAndQuery {
     }
 
     /**
-     * Build a query string according to the convensions for encoding
+     * Build a form data string according to the convensions for encoding
      * HTTP form data.
-     * @return The query string, or {@code null} if the query is empty.
+     * @return The form data string, or {@code null} if no parameters are appended.
      */
-    public String getQuery() {
+    public String getFormData() {
         return params.toString();
     }
 
     /**
-     * Make a relative URL from the path and the query parameters.
+     * Make a relative URL with path and query.
      * @return The created relative URL.
      */
     public String toString() {
-        String q = getQuery();
+        String q = getFormData();
         return (path != null ? path : "") + (q.isEmpty() ? "" : "?") + q;
     }
 }
