@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class HydrometryServiceClientTest {
+class HydrometryServiceClientStationsTest {
     @Mock
     StreamService streamLayer;
     HydrometryService service;
@@ -64,13 +64,13 @@ class HydrometryServiceClientTest {
     }
 
     @Test
-    void testStationsNoParameters() throws IOException, InterruptedException {
+    void testNoParameters() throws IOException, InterruptedException {
         service.getStations().exec();
         verify(streamLayer).get("stations", "");
     }
 
     @Test
-    void testStationsSomeParameters() throws IOException, InterruptedException {
+    void testSomeParameters() throws IOException, InterruptedException {
         service.getStations()
             .stationId("61000181")
             .operatorStationId("610181")
@@ -90,27 +90,27 @@ class HydrometryServiceClientTest {
     }
 
     @Test
-    void testStationsNullResponse() throws IOException, InterruptedException {
+    void testNullResponse() throws IOException, InterruptedException {
         Iterator<Station> stations = service.getStations().exec();
         assertFalse(stations.hasNext());
     }
 
     @Test
-    void testStationsEmptyResponse() throws IOException, InterruptedException {
+    void testEmptyResponse() throws IOException, InterruptedException {
         when(streamLayer.get(any(), any())).thenReturn(InputStream.nullInputStream());
         Iterator<Station> stations = service.getStations().exec();
         assertFalse(stations.hasNext());
     }
 
     @Test
-    void testStationsSpaceResponse() throws IOException, InterruptedException {
+    void testSpaceResponse() throws IOException, InterruptedException {
         when(streamLayer.get(any(), any())).thenReturn(new ByteArrayInputStream(new byte[]{' ', '\t', '\f', '\r', '\n'}));
         Iterator<Station> stations = service.getStations().exec();
         assertFalse(stations.hasNext());
     }
 
     @Test
-    void testStationsSomeResponse() throws IOException, InterruptedException {
+    void testSomeResponse() throws IOException, InterruptedException {
         when(streamLayer.get(any(), any())).thenReturn(getClass().getResourceAsStream("stations.json"));
         Iterator<Station> stations = service.getStations().exec();
         assertEquals(a, stations.next());
@@ -118,13 +118,13 @@ class HydrometryServiceClientTest {
     }
 
     @Test
-    void testStationsInvalidResponse() throws IOException, InterruptedException {
+    void testInvalidResponse() throws IOException, InterruptedException {
         when(streamLayer.get(any(), any())).thenReturn(new ByteArrayInputStream(new byte[]{'X'}));
         assertThrows(IOException.class, () -> service.getStations().exec());
     }
 
     @Test
-    void testStationsFail(@Mock HttpResponseException response) throws IOException, InterruptedException {
+    void testFail(@Mock HttpResponseException response) throws IOException, InterruptedException {
         when(response.statusCode()).thenReturn(400);
         when(streamLayer.get(any(), any())).thenThrow(response);
         try {

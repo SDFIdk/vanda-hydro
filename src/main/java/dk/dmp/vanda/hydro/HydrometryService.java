@@ -88,7 +88,7 @@ public interface HydrometryService {
          * Returns the current results, i.e. no overwritten history.
          * @return The measurements fulfilling all conditions of the request.
          */
-        Iterator<WaterLevelMeasurement> exec() throws IOException;
+        Iterator<WaterLevelMeasurement> exec() throws IOException, InterruptedException;
 
         /**
          * Query by station ID.

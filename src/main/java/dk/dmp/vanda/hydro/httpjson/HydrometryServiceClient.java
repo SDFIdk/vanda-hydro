@@ -2,13 +2,17 @@ package dk.dmp.vanda.hydro.httpjson;
 
 import dk.dmp.vanda.hydro.HydrometryService;
 import dk.dmp.vanda.hydro.Station;
+import dk.dmp.vanda.hydro.WaterLevelMeasurement;
 import jakarta.json.bind.Jsonb;
 import jakarta.json.bind.JsonbBuilder;
 import jakarta.json.bind.JsonbException;
 import org.apache.commons.io.input.ObservableInputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -21,6 +25,7 @@ import java.util.*;
  * However, the operations builders are not.
  */
 public class HydrometryServiceClient implements HydrometryService, AutoCloseable {
+    private final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
     private final Jsonb jsonb = JsonbBuilder.create();
     private final StreamService streamService;
 
@@ -39,7 +44,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
     @Override
     public GetWaterLevelsOperation getWaterLevels() {
-        return null;
+        return new WaterLevelsRequest();
     }
 
     /**
@@ -115,14 +120,94 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             WhitespaceObserver w = new WhitespaceObserver();
             if (body == null) {
                 return Collections.emptyIterator();
-            } else try {
-                ObservableInputStream is = new ObservableInputStream(body, w);
+            } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
                 List<JsonStation> jstations = jsonb.fromJson(is, JsonStationArrayType);
                 @SuppressWarnings("unchecked")
                 List<Station> stations = (List<Station>)(List<?>)jstations;
                 return stations.iterator();
             } catch (JsonbException e) {
                 if (w.hasObservedOnlyWhitespace()) return Collections.emptyIterator();
+                else throw new IOException("Cannot deserialize response body as JSON", e);
+            }
+        }
+    }
+
+    private static final Type JsonStationWaterLevelArrayType = new LinkedList<JsonStationWaterLevel>(){}.getClass().getGenericSuperclass();
+    private class WaterLevelsRequest implements GetWaterLevelsOperation {
+        private final URLEncodedFormData form = new URLEncodedFormData();
+        {
+            form.setPath("water-levels");
+        }
+
+        @Override
+        public Iterator<WaterLevelMeasurement> exec() throws IOException, InterruptedException {
+            List<JsonStationWaterLevel> stations = transform(streamService.get(form.getPath(), form.getFormData()));
+            if (stations.isEmpty()) return Collections.emptyIterator();
+            if (stations.size() > 1) {
+                List<JsonStationWaterLevel> ids = collectIds(stations);
+                log.debug("GetWaterLevels will interpret just the first station in response, got: {}", ids);
+            }
+            @SuppressWarnings("unchecked")
+            List<WaterLevelMeasurement> m = (List<WaterLevelMeasurement>)(List<?>)stations.getFirst().results;
+            if (m != null) return m.iterator();
+            else return Collections.emptyIterator();
+        }
+
+        private static List<JsonStationWaterLevel> collectIds(List<JsonStationWaterLevel> stations) {
+            List<JsonStationWaterLevel> ids = new LinkedList<>();
+            for (JsonStationWaterLevel s : stations) {
+                JsonStationWaterLevel n = new JsonStationWaterLevel();
+                n.stationId = s.stationId;
+                n.operatorStationId = s.operatorStationId;
+                ids.add(n);
+            }
+            return ids;
+        }
+
+        @Override
+        public GetWaterLevelsOperation stationId(String stationId) {
+            form.append("stationId", stationId);
+            return this;
+        }
+
+        @Override
+        public GetWaterLevelsOperation operatorStationId(String operatorStationId) {
+            form.append("operatorStationId", operatorStationId);
+            return this;
+        }
+
+        @Override
+        public GetWaterLevelsOperation measurementPointNumber(int measurementPointNumber) {
+            form.append("measurementPointNumber", Integer.toString(measurementPointNumber));
+            return this;
+        }
+
+        @Override
+        public GetWaterLevelsOperation from(OffsetDateTime pointInTime) {
+            form.append("from", formatUTCRFC3339NoSeconds(pointInTime));
+            return this;
+        }
+
+        @Override
+        public GetWaterLevelsOperation to(OffsetDateTime pointInTime) {
+            form.append("to", formatUTCRFC3339NoSeconds(pointInTime));
+            return this;
+        }
+
+        @Override
+        public GetWaterLevelsOperation createdAfter(OffsetDateTime pointInTime) {
+            form.append("createdAfter", formatUTCRFC3339NoSeconds(pointInTime));
+            return this;
+        }
+
+        private List<JsonStationWaterLevel> transform(InputStream body) throws IOException {
+            WhitespaceObserver w = new WhitespaceObserver();
+            if (body == null) {
+                return Collections.emptyList();
+            } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
+                return jsonb.fromJson(is, JsonStationWaterLevelArrayType);
+            } catch (JsonbException e) {
+                if (w.hasObservedOnlyWhitespace()) return Collections.emptyList();
                 else throw new IOException("Cannot deserialize response body as JSON", e);
             }
         }
