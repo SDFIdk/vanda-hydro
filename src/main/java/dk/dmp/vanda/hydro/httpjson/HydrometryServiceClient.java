@@ -44,9 +44,12 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
     /**
      * According to the OpenAPI specification of the service in test,
-     * withResultsAfter, from and to must be given as a UTC timestamp in
+     * all input timestamp arguments must be given as a UTC timestamps in
      * the RFC 3339 date+time format without seconds.
      */
+    private static String formatUTCRFC3339NoSeconds(OffsetDateTime t) {
+        return t.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS);
+    }
     private static final DateTimeFormatter RFC_3339_NO_SECONDS =
             new DateTimeFormatterBuilder()
                     .parseCaseInsensitive()
@@ -119,15 +122,13 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
-            // NB! Offset must be Z or +01:00, i.e. UTC.
-            form.append("withResultsAfter", pointInTime.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS));
+            form.append("withResultsAfter", formatUTCRFC3339NoSeconds(pointInTime));
             return this;
         }
 
         @Override
         public GetStationsOperation withResultsCreatedAfter(OffsetDateTime pointInTime) {
-            // NB! Offset must be Z or +01:00, i.e. UTC.
-            form.append("withResultsCreatedAfter", pointInTime.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS));
+            form.append("withResultsCreatedAfter", formatUTCRFC3339NoSeconds(pointInTime));
             return this;
         }
 
@@ -149,7 +150,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
     }
 
     /**
-     * Poor mans check for empty input stream: works only for ASCII-like
+     * Poor man's check for empty input stream: works only for ASCII-like
      * encodings, e.g. UTF-8.
      */
     private static class WhitespaceObserver extends ObservableInputStream.Observer {
