@@ -111,8 +111,8 @@ public interface HydrometryService {
          * Both from and
          * {@linkplain #to(OffsetDateTime) to} must be specified if either
          * of them is.
-         * Note that time components after minute are ignored.
-         * If not specified, return data for the last 24 hours.
+         * Time components after minute are ignored.
+         * If not specified, return data for the latest 24 hours.
          */
         GetWaterLevelsOperation from(OffsetDateTime pointInTime);
 
@@ -121,15 +121,15 @@ public interface HydrometryService {
          * Both {@linkplain #from(OffsetDateTime) from} and
          * to must be specified if either
          * of them is.
-         * Note that time components after minute are ignored.
-         * If not specified, return data for the last 24 hours.
+         * Time components after minute are ignored.
+         * If not specified, return data for the latest 24 hours.
          */
         GetWaterLevelsOperation to(OffsetDateTime pointInTime);
 
         /**
          * Query measurements registered (created or updated) from the
          * given point in time, inclusive.
-         * Note that time components after minute are ignored.
+         * Time components after minute are ignored.
          */
         GetWaterLevelsOperation createdAfter(OffsetDateTime pointInTime);
     }

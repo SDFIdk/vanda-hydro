@@ -15,9 +15,9 @@ import static org.junit.jupiter.api.Assertions.*;
 class JsonStationWaterLevelTest {
     @Test
     void testJsonList() throws Exception {
-        List<JsonStationWaterLevel> stations;
+        List<JsonStationResults<JsonWaterLevelMeasurement>> stations;
         try (InputStream is = getClass().getResourceAsStream("water-level_61000181.json"); Jsonb jsonb = JsonbBuilder.create()) {
-            Object dummy = new LinkedList<JsonStationWaterLevel>(){};
+            Object dummy = new LinkedList<JsonStationResults<JsonWaterLevelMeasurement>>(){};
             Type t = dummy.getClass().getGenericSuperclass();
             stations = jsonb.fromJson(is, t);
         }

@@ -132,7 +132,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         }
     }
 
-    private static final Type JsonStationWaterLevelArrayType = new LinkedList<JsonStationWaterLevel>(){}.getClass().getGenericSuperclass();
+    private static final Type JsonStationWaterLevelArrayType = new LinkedList<JsonStationResults<JsonWaterLevelMeasurement>>(){}.getClass().getGenericSuperclass();
     private class WaterLevelsRequest implements GetWaterLevelsOperation {
         private final URLEncodedFormData form = new URLEncodedFormData();
         {
@@ -141,10 +141,10 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public Iterator<WaterLevelMeasurement> exec() throws IOException, InterruptedException {
-            List<JsonStationWaterLevel> stations = transform(streamService.get(form.getPath(), form.getFormData()));
+            List<JsonStationResults<JsonWaterLevelMeasurement>> stations = transform(streamService.get(form.getPath(), form.getFormData()));
             if (stations.isEmpty()) return Collections.emptyIterator();
             if (stations.size() > 1) {
-                List<JsonStationWaterLevel> ids = collectIds(stations);
+                List<JsonStationId> ids = collectIds(stations);
                 log.debug("GetWaterLevels will interpret just the first station in response, got: {}", ids);
             }
             @SuppressWarnings("unchecked")
@@ -153,10 +153,10 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             else return Collections.emptyIterator();
         }
 
-        private static List<JsonStationWaterLevel> collectIds(List<JsonStationWaterLevel> stations) {
-            List<JsonStationWaterLevel> ids = new LinkedList<>();
-            for (JsonStationWaterLevel s : stations) {
-                JsonStationWaterLevel n = new JsonStationWaterLevel();
+        private static List<JsonStationId> collectIds(List<? extends JsonStationResults<?>> stations) {
+            List<JsonStationId> ids = new LinkedList<>();
+            for (JsonStationResults<?> s : stations) {
+                JsonStationId n = new JsonStationId();
                 n.stationId = s.stationId;
                 n.operatorStationId = s.operatorStationId;
                 ids.add(n);
@@ -200,7 +200,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             return this;
         }
 
-        private List<JsonStationWaterLevel> transform(InputStream body) throws IOException {
+        private List<JsonStationResults<JsonWaterLevelMeasurement>> transform(InputStream body) throws IOException {
             WhitespaceObserver w = new WhitespaceObserver();
             if (body == null) {
                 return Collections.emptyList();
