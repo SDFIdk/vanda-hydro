@@ -77,60 +77,62 @@ public interface HydrometryService {
 
     /**
      * Request for the {@link #getWaterLevels()} operation.
+     */
+    interface GetWaterLevelsOperation extends GetWatercourseMeasurements<WaterLevelMeasurement> {}
+
+    /**
      * {@linkplain #stationId(String) Station ID} or
      * {@linkplain #operatorStationId(String) operator station ID}
      * must be specified.
+     * @param <T> The kind of measurement
      */
-    interface GetWaterLevelsOperation
-    {
+    interface GetWatercourseMeasurements<T> {
         /**
          * Perform the request.
          * Returns the current results, i.e. no overwritten history.
          * @return The measurements fulfilling all conditions of the request.
          */
-        Iterator<WaterLevelMeasurement> exec() throws IOException, InterruptedException;
+        Iterator<T> exec() throws IOException, InterruptedException;
 
         /**
          * Query by station ID.
          */
-        GetWaterLevelsOperation stationId(String stationId);
+        void stationId(String stationId);
 
         /**
          * Query by station ID as known by the operator of the station.
          */
-        GetWaterLevelsOperation operatorStationId(String operatorStationId);
+        void operatorStationId(String operatorStationId);
 
         /**
-         * Query by measurement point.
-         * If not specified, return data for all measurement points.
+         * Query by measurement point. If not specified, return data for
+         * all measurement points.
          */
-        GetWaterLevelsOperation measurementPointNumber(int measurementPointNumber);
+        void measurementPointNumber(int measurementPointNumber);
 
         /**
-         * Query measurements taken from the given point in time, inclusive.
-         * Both from and
-         * {@linkplain #to(OffsetDateTime) to} must be specified if either
-         * of them is.
-         * Time components after minute are ignored.
-         * If not specified, return data for the latest 24 hours.
+         * Query measurements taken from the given point in time,
+         * inclusive. Both from and {@linkplain #to(OffsetDateTime) to}
+         * must be specified if either of them is. Time components after
+         * minute are ignored. If not specified, return data for the
+         * latest 24 hours.
          */
-        GetWaterLevelsOperation from(OffsetDateTime pointInTime);
+        void from(OffsetDateTime pointInTime);
 
         /**
          * Query measurements taken until the given timestamp, inclusive.
-         * Both {@linkplain #from(OffsetDateTime) from} and
-         * to must be specified if either
-         * of them is.
-         * Time components after minute are ignored.
-         * If not specified, return data for the latest 24 hours.
+         * Both {@linkplain #from(OffsetDateTime) from} and to must be
+         * specified if either of them is. Time components after minute
+         * are ignored. If not specified, return data for the latest 24
+         * hours.
          */
-        GetWaterLevelsOperation to(OffsetDateTime pointInTime);
+        void to(OffsetDateTime pointInTime);
 
         /**
          * Query measurements registered (created or updated) from the
-         * given point in time, inclusive.
-         * Time components after minute are ignored.
+         * given point in time, inclusive. Time components after minute
+         * are ignored.
          */
-        GetWaterLevelsOperation createdAfter(OffsetDateTime pointInTime);
+        void createdAfter(OffsetDateTime pointInTime);
     }
 }

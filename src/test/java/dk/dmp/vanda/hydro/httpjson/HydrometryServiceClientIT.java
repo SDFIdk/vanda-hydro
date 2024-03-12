@@ -60,10 +60,11 @@ class HydrometryServiceClientIT {
 
     @Test
     void testWaterLevels() throws Exception {
-        Iterator<WaterLevelMeasurement> iter = service.getWaterLevels().stationId("61000181")
-            .from(OffsetDateTime.parse("2023-10-02T19:05+01:00"))
-            .to(OffsetDateTime.parse("2023-10-02T19:10+01:00"))
-            .exec();
+        HydrometryService.GetWaterLevelsOperation op = service.getWaterLevels();
+        op.stationId("61000181");
+        op.from(OffsetDateTime.parse("2023-10-02T19:05+01:00"));
+        op.to(OffsetDateTime.parse("2023-10-02T19:10+01:00"));
+        Iterator<WaterLevelMeasurement> iter = op.exec();
         WaterLevelMeasurement m1 = iter.next();
         assertEquals("Vandstand", m1.parameter());
         WaterLevelMeasurement m2 = iter.next();

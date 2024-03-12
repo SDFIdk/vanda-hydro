@@ -60,14 +60,14 @@ class HydrometryServiceClientWaterLevelTest {
 
     @Test
     void testSomeParameters() throws IOException, InterruptedException {
-        service.getWaterLevels()
-            .stationId("61000181")
-            .operatorStationId("610181")
-            .measurementPointNumber(1)
-            .from(OffsetDateTime.of(2024,2,29, 10,10,10,0, ZoneOffset.ofHours(1)))
-            .to(OffsetDateTime.of(2024,3,1, 10,10,10,0, ZoneOffset.ofHours(1)))
-            .createdAfter(OffsetDateTime.of(2024,3,7, 11,25,10,0, ZoneOffset.ofHours(1)))
-            .exec();
+        HydrometryService.GetWaterLevelsOperation op = service.getWaterLevels();
+        op.stationId("61000181");
+        op.operatorStationId("610181");
+        op.measurementPointNumber(1);
+        op.from(OffsetDateTime.of(2024,2,29, 10,10,10,0, ZoneOffset.ofHours(1)));
+        op.to(OffsetDateTime.of(2024,3,1, 10,10,10,0, ZoneOffset.ofHours(1)));
+        op.createdAfter(OffsetDateTime.of(2024,3,7, 11,25,10,0, ZoneOffset.ofHours(1)));
+        op.exec();
         verify(streamLayer).get("water-levels",
             "stationId=61000181&operatorStationId=610181"
                 + "&measurementPointNumber=1"
