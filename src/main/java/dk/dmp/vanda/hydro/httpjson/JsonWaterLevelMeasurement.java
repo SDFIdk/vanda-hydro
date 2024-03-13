@@ -7,7 +7,7 @@ import java.util.StringJoiner;
 
 import static dk.dmp.vanda.hydro.httpjson.Labler.lable;
 
-public class JsonWaterLevelMeasurement extends JsonWatercourseMeasurement implements WaterLevelMeasurement {
+public class JsonWaterLevelMeasurement extends JsonMeasurement implements WaterLevelMeasurement {
     private Double resultElevationCorrected;
     public void setResultElevationCorrected(Double v) {
         resultElevationCorrected = v;

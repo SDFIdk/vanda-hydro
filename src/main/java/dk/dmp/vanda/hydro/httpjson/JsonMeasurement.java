@@ -1,6 +1,6 @@
 package dk.dmp.vanda.hydro.httpjson;
 
-import dk.dmp.vanda.hydro.WatercourseMeasurement;
+import dk.dmp.vanda.hydro.Measurement;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -8,7 +8,7 @@ import java.util.StringJoiner;
 
 import static dk.dmp.vanda.hydro.httpjson.Labler.lable;
 
-public class JsonWatercourseMeasurement implements WatercourseMeasurement {
+public class JsonMeasurement implements Measurement {
     private int measurementPointNumber;
     public void setMeasurementPointNumber(int n) {
         measurementPointNumber = n;
@@ -93,7 +93,7 @@ public class JsonWatercourseMeasurement implements WatercourseMeasurement {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof WatercourseMeasurement that)) return false;
+        if (!(o instanceof Measurement that)) return false;
         return measurementPointNumber == that.measurementPointNumber()
             && parameterSc == that.parameterSc()
             && Objects.equals(parameter, that.parameter())

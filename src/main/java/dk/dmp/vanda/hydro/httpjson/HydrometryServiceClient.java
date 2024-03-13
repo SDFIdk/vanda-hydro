@@ -130,7 +130,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         }
     }
 
-    private class MeasurementsRequest<T> implements GetWatercourseMeasurements<T> {
+    private class MeasurementsRequest<T> implements GetMeasurements<T> {
         protected final URLEncodedFormData form = new URLEncodedFormData();
         private final Type JsonStationResultsArrayType;
 

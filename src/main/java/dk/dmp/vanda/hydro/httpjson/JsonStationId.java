@@ -8,9 +8,13 @@ public class JsonStationId {
 
     @Override
     public String toString() {
-        StringJoiner s = Labler.joiner(JsonStationId.class);
+        StringJoiner s = Labler.joiner(getClass());
+        appendFieldsTo(s);
+        return s.toString();
+    }
+
+    protected void appendFieldsTo(StringJoiner s) {
         s.add(Labler.lable(stationId, "stationId"));
         s.add(Labler.lable(operatorStationId, "operatorStationId"));
-        return s.toString();
     }
 }

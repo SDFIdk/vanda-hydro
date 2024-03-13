@@ -78,7 +78,7 @@ public interface HydrometryService {
     /**
      * Request for the {@link #getWaterLevels()} operation.
      */
-    interface GetWaterLevelsOperation extends GetWatercourseMeasurements<WaterLevelMeasurement> {}
+    interface GetWaterLevelsOperation extends GetMeasurements<WaterLevelMeasurement> {}
 
     /**
      * {@linkplain #stationId(String) Station ID} or
@@ -86,7 +86,7 @@ public interface HydrometryService {
      * must be specified.
      * @param <T> The kind of measurement
      */
-    interface GetWatercourseMeasurements<T> {
+    interface GetMeasurements<T> {
         /**
          * Perform the request.
          * Returns the current results, i.e. no overwritten history.

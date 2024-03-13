@@ -5,7 +5,7 @@ import java.time.OffsetDateTime;
 /**
  * A result of measuring something in a watercourse.
  */
-public interface WatercourseMeasurement {
+public interface Measurement {
     /**
      * Get the number (starting from 1) of this measurement point in the
      * station.
