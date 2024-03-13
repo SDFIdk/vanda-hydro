@@ -9,6 +9,24 @@ import java.util.StringJoiner;
 import static dk.dmp.vanda.hydro.httpjson.Labler.lable;
 
 public class JsonMeasurement implements Measurement {
+    private String stationId;
+    public void setStationId(String s) {
+        stationId = s;
+    }
+    @Override
+    public String stationId() {
+        return stationId;
+    }
+
+    private String operatorStationId;
+    public void setOperatorStationId(String s) {
+        operatorStationId = s;
+    }
+    @Override
+    public String operatorStationId() {
+        return operatorStationId;
+    }
+
     private int measurementPointNumber;
     public void setMeasurementPointNumber(int n) {
         measurementPointNumber = n;
@@ -94,7 +112,9 @@ public class JsonMeasurement implements Measurement {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Measurement that)) return false;
-        return measurementPointNumber == that.measurementPointNumber()
+        return Objects.equals(stationId, that.stationId())
+            && Objects.equals(operatorStationId, that.operatorStationId())
+            && measurementPointNumber == that.measurementPointNumber()
             && parameterSc == that.parameterSc()
             && Objects.equals(parameter, that.parameter())
             && examinationTypeSc == that.examinationTypeSc()
@@ -118,6 +138,8 @@ public class JsonMeasurement implements Measurement {
     }
 
     protected void appendFieldsAndLablesTo(StringJoiner sj) {
+        sj.add(lable(stationId, "stationId"));
+        sj.add(lable(operatorStationId, "operatorStationId"));
         sj.add(lable(measurementPointNumber, "measurementPointNumber"));
         sj.add(lable(parameterSc, "parameterSc"));
         sj.add(lable(parameter, "parameter"));

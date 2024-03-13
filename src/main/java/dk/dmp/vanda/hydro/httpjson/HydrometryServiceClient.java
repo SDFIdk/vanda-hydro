@@ -19,6 +19,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * The implementation is immutable, thus thread-safe.
@@ -140,18 +141,27 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public Iterator<T> exec() throws IOException, InterruptedException {
-            List<JsonStationResults<T>> stations = transform(streamService.get(form.getPath(), form.getFormData()));
+            List<JsonStationResults<? extends JsonMeasurement>> stations = transform(streamService.get(form.getPath(), form.getFormData()));
             if (stations.isEmpty()) return Collections.emptyIterator();
             if (stations.size() > 1) {
                 List<JsonStationId> ids = collectIds(stations);
-                log.debug("Will interpret just the first station in response {}", ids);
+                log.debug("Multiple stations in response from {}: {}", form, ids);
             }
-            List<T> m = stations.getFirst().results;
-            if (m != null) return m.iterator();
-            else return Collections.emptyIterator();
+            Stream<T> m = stations.stream().flatMap(this::denormalize);
+            return m.iterator();
         }
 
-        private List<JsonStationResults<T>> transform(InputStream body) throws IOException {
+        @SuppressWarnings("unchecked")
+        private Stream<T> denormalize(JsonStationResults<? extends JsonMeasurement> stationResults) {
+            if (stationResults.results == null) return Stream.empty();
+            return stationResults.results.stream().map(r -> {
+                r.setStationId(stationResults.stationId);
+                r.setOperatorStationId(stationResults.operatorStationId);
+                return (T)r;
+            });
+        }
+
+        private List<JsonStationResults<? extends JsonMeasurement>> transform(InputStream body) throws IOException {
             WhitespaceObserver w = new WhitespaceObserver();
             if (body == null) {
                 return Collections.emptyList();

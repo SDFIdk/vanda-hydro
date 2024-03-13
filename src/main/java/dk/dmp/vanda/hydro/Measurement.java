@@ -7,6 +7,21 @@ import java.time.OffsetDateTime;
  */
 public interface Measurement {
     /**
+     * Get the unique VanDa Hydro station ID.
+     * Often the same as the old obsStedNr.
+     * @return The 8-digit station ID.
+     */
+    String stationId();
+
+    /**
+     * Get the station ID assigned by the operator of the station.
+     * This is normally 6 or 8 digits, if it exists.
+     * Previously known as ejerStedNr.
+     * @return Operator station ID, a.k.a. ejerStedNr.
+     */
+    String operatorStationId();
+
+    /**
      * Get the number (starting from 1) of this measurement point in the
      * station.
      * @return Measurement point number in a station.

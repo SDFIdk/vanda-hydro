@@ -34,6 +34,7 @@ class HydrometryServiceClientWaterLevelTest {
         service = new HydrometryServiceClient(streamLayer);
 
         JsonWaterLevelMeasurement m = new JsonWaterLevelMeasurement();
+        m.setStationId("61000181");
         m.setMeasurementPointNumber(1);
         m.setParameterSc(1233);
         m.setParameter("Vandstand");
@@ -103,6 +104,19 @@ class HydrometryServiceClientWaterLevelTest {
         assertTrue(water.hasNext());
         assertNotNull(water.next());
         assertFalse(water.hasNext());
+        assertThrows(NoSuchElementException.class, water::next);
+    }
+
+    @Test
+    void testExtraResponse() throws IOException, InterruptedException {
+        when(streamLayer.get(any(), any())).thenReturn(getClass().getResourceAsStream("water-level_extra.json"));
+        Iterator<WaterLevelMeasurement> water = service.getWaterLevels().exec();
+        assertEquals(a, water.next());
+        assertNotNull(water.next());
+        WaterLevelMeasurement m = water.next();
+        assertEquals("61000182", m.stationId());
+        assertEquals("610181", m.operatorStationId());
+        assertNotNull(water.next());
         assertThrows(NoSuchElementException.class, water::next);
     }
 
