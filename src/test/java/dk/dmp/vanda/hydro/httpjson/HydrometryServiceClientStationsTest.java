@@ -71,16 +71,16 @@ class HydrometryServiceClientStationsTest {
 
     @Test
     void testSomeParameters() throws IOException, InterruptedException {
-        service.getStations()
-            .stationId("61000181")
-            .operatorStationId("610181")
-            .stationOwnerCvr("DK25798376")
-            .operatorCvr("12345678-9012")
-            .parameterSc(25)
-            .examinationTypeSc(27)
-            .withResultsAfter(OffsetDateTime.of(2024,2,29, 10,10,10,0, ZoneOffset.ofHours(1)))
-            .withResultsCreatedAfter(OffsetDateTime.of(2024,3,6, 15,3,10,0, ZoneOffset.ofHours(1)))
-            .exec();
+        HydrometryService.GetStationsOperation op = service.getStations();
+        op.stationId("61000181");
+        op.operatorStationId("610181");
+        op.stationOwnerCvr("DK25798376");
+        op.operatorCvr("12345678-9012");
+        op.parameterSc(25);
+        op.examinationTypeSc(27);
+        op.withResultsAfter(OffsetDateTime.of(2024,2,29, 10,10,10,0, ZoneOffset.ofHours(1)));
+        op.withResultsCreatedAfter(OffsetDateTime.of(2024,3,6, 15,3,10,0, ZoneOffset.ofHours(1)));
+        op.exec();
         verify(streamLayer).get("stations",
             "stationId=61000181&operatorStationId=610181" +
             "&stationOwnerCvr=DK25798376&operatorCvr=12345678-9012" +

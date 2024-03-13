@@ -34,45 +34,45 @@ public interface HydrometryService {
         /**
          * Query by station ID.
          */
-        GetStationsOperation stationId(String stationId);
+        void stationId(String stationId);
 
         /**
          * Query by station ID as known by the operator of the station.
          * This is normally 6 or 8 digits.
          */
-        GetStationsOperation operatorStationId(String operatorStationId);
+        void operatorStationId(String operatorStationId);
 
         /**
          * Query by CVR number of station owner, in DK12345678 format.
          */
-        GetStationsOperation stationOwnerCvr(String stationOwnerCvr);
+        void stationOwnerCvr(String stationOwnerCvr);
 
         /**
          * Query by CVR number of station operator, in DK12345678 format.
          */
-        GetStationsOperation operatorCvr(String operatorCvr);
+        void operatorCvr(String operatorCvr);
 
         /**
          * Query by measured parameter as stancode from stancodelist 1008.
          */
-        GetStationsOperation parameterSc(int parameterSc);
+        void parameterSc(int parameterSc);
 
         /**
          * Query by examination type as stancode from stancodelist 1101.
          */
-        GetStationsOperation examinationTypeSc(int examinationTypeSc);
+        void examinationTypeSc(int examinationTypeSc);
 
         /**
          * Return only stations with measurements taken after a point in time.
          * Note that time components after minute are ignored.
          */
-        GetStationsOperation withResultsAfter(OffsetDateTime pointInTime);
+        void withResultsAfter(OffsetDateTime pointInTime);
 
         /**
          * Return only stations with measurements registered after a point in time.
          * Note that time components after minute are ignored.
          */
-        GetStationsOperation withResultsCreatedAfter(OffsetDateTime pointInTime);
+        void withResultsCreatedAfter(OffsetDateTime pointInTime);
     }
 
     /**

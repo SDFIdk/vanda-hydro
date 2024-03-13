@@ -56,8 +56,8 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         jsonb.close();
     }
 
-    private static final Type JsonStationArrayType = new LinkedList<JsonStation>(){}.getClass().getGenericSuperclass();
     private class StationsRequest implements GetStationsOperation {
+        private static final Type JsonStationArrayType = new LinkedList<JsonStation>(){}.getClass().getGenericSuperclass();
         private final URLEncodedFormData form = new URLEncodedFormData();
         {
             form.setPath("stations");
@@ -69,51 +69,43 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         }
 
         @Override
-        public GetStationsOperation stationId(String stationId) {
+        public void stationId(String stationId) {
             form.append("stationId", stationId);
-            return this;
         }
 
         @Override
-        public GetStationsOperation operatorStationId(String operatorStationId) {
+        public void operatorStationId(String operatorStationId) {
             form.append("operatorStationId", operatorStationId);
-            return this;
         }
 
         @Override
-        public GetStationsOperation stationOwnerCvr(String stationOwnerCvr) {
+        public void stationOwnerCvr(String stationOwnerCvr) {
             form.append("stationOwnerCvr", stationOwnerCvr);
-            return this;
         }
 
         @Override
-        public GetStationsOperation operatorCvr(String operatorCvr) {
+        public void operatorCvr(String operatorCvr) {
             form.append("operatorCvr", operatorCvr);
-            return this;
         }
 
         @Override
-        public GetStationsOperation parameterSc(int parameterSc) {
+        public void parameterSc(int parameterSc) {
             form.append("parameterSc", String.valueOf(parameterSc));
-            return this;
         }
 
         @Override
-        public GetStationsOperation examinationTypeSc(int examinationTypeSc) {
+        public void examinationTypeSc(int examinationTypeSc) {
             form.append("examinationTypeSc", String.valueOf(examinationTypeSc));
-            return this;
         }
 
         @Override
-        public GetStationsOperation withResultsAfter(OffsetDateTime pointInTime) {
+        public void withResultsAfter(OffsetDateTime pointInTime) {
             form.append("withResultsAfter", formatUTCRFC3339NoSeconds(pointInTime));
-            return this;
         }
 
         @Override
-        public GetStationsOperation withResultsCreatedAfter(OffsetDateTime pointInTime) {
+        public void withResultsCreatedAfter(OffsetDateTime pointInTime) {
             form.append("withResultsCreatedAfter", formatUTCRFC3339NoSeconds(pointInTime));
-            return this;
         }
 
         private Iterator<Station> transform(InputStream body) throws IOException {
@@ -121,9 +113,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             if (body == null) {
                 return Collections.emptyIterator();
             } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
-                List<JsonStation> jstations = jsonb.fromJson(is, JsonStationArrayType);
-                @SuppressWarnings("unchecked")
-                List<Station> stations = (List<Station>)(List<?>)jstations;
+                List<Station> stations = jsonb.fromJson(is, JsonStationArrayType);
                 return stations.iterator();
             } catch (JsonbException e) {
                 if (w.hasObservedOnlyWhitespace()) return Collections.emptyIterator();
@@ -133,9 +123,9 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
     }
 
     private class WaterLevelsRequest extends MeasurementsRequest<WaterLevelMeasurement> implements GetWaterLevelsOperation {
-        private static final class JsonStationWaterLevelArray extends LinkedList<JsonStationResults<JsonWaterLevelMeasurement>> {}
+        private static final Type JsonStationWaterLevelArrayType = new LinkedList<JsonStationResults<JsonWaterLevelMeasurement>>(){}.getClass().getGenericSuperclass();
         public WaterLevelsRequest() {
-            super(JsonStationWaterLevelArray.class.getGenericSuperclass());
+            super(JsonStationWaterLevelArrayType);
             form.setPath("water-levels");
         }
     }

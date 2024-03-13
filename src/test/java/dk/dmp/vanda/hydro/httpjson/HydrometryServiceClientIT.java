@@ -34,7 +34,9 @@ class HydrometryServiceClientIT {
 
     @Test
     void testStations() throws Exception {
-        Iterator<Station> iter = service.getStations().stationId("61000181").exec();
+        HydrometryService.GetStationsOperation op = service.getStations();
+        op.stationId("61000181");
+        Iterator<Station> iter = op.exec();
         Station station = iter.next();
         assertAll(
             () -> assertFalse(iter.hasNext()),
@@ -46,9 +48,10 @@ class HydrometryServiceClientIT {
 
     @Test
     void testStationsAfter() throws Exception {
-        Iterator<Station> iter = service.getStations().stationId("61000181")
-            .withResultsAfter(OffsetDateTime.of(2018,1,1, 14,0,0,0, ZoneOffset.ofHours(1)))
-            .exec();
+        HydrometryService.GetStationsOperation op = service.getStations();
+        op.stationId("61000181");
+        op.withResultsAfter(OffsetDateTime.of(2018,1,1, 14,0,0,0, ZoneOffset.ofHours(1)));
+        Iterator<Station> iter = op.exec();
         Station station = iter.next();
         assertAll(
             () -> assertFalse(iter.hasNext()),
