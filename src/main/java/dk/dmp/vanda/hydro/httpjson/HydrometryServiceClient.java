@@ -67,7 +67,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            return transform(streamService.get(form.getPath(), form.getFormData()));
+            return fromJson(streamService.get(form.getPath(), form.getFormData())).iterator();
         }
 
         @Override
@@ -110,15 +110,14 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             form.append("withResultsCreatedAfter", formatUTCRFC3339NoSeconds(pointInTime));
         }
 
-        private Iterator<Station> transform(InputStream body) throws IOException {
+        private List<Station> fromJson(InputStream body) throws IOException {
             WhitespaceObserver w = new WhitespaceObserver();
             if (body == null) {
-                return Collections.emptyIterator();
+                return Collections.emptyList();
             } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
-                List<Station> stations = jsonb.fromJson(is, JsonStationArrayType);
-                return stations.iterator();
+                return jsonb.fromJson(is, JsonStationArrayType);
             } catch (JsonbException e) {
-                if (w.hasObservedOnlyWhitespace()) return Collections.emptyIterator();
+                if (w.hasObservedOnlyWhitespace()) return Collections.emptyList();
                 else throw new IOException("Cannot deserialize response body as JSON", e);
             }
         }
