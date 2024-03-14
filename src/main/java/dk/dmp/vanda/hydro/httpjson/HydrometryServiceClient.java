@@ -58,7 +58,8 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
     }
 
     private class StationsRequest implements GetStationsOperation {
-        private static final Type JsonStationArrayType = new LinkedList<JsonStation>(){}.getClass().getGenericSuperclass();
+        private interface JsonStationArray extends List<JsonStation> {}
+        private static final Type JsonStationArrayType = JsonStationArray.class.getGenericInterfaces()[0];
         private final URLEncodedFormData form = new URLEncodedFormData();
         {
             form.setPath("stations");
