@@ -123,45 +123,39 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         }
     }
 
-    private class WaterLevelsRequest extends MeasurementsRequest<WaterLevelMeasurement> implements GetWaterLevelsOperation {
-        private static final Type JsonStationWaterLevelArrayType = new LinkedList<JsonStationResults<JsonWaterLevelMeasurement>>(){}.getClass().getGenericSuperclass();
+    private class WaterLevelsRequest extends MeasurementsRequest<WaterLevelMeasurement, JsonWaterLevelMeasurement> implements GetWaterLevelsOperation {
+        private interface JsonStationWaterLevelArray extends List<JsonStationResults<JsonWaterLevelMeasurement>>{}
         public WaterLevelsRequest() {
-            super(JsonStationWaterLevelArrayType);
+            super(JsonStationWaterLevelArray.class);
             form.setPath("water-levels");
+        }
+        @Override
+        protected WaterLevelMeasurement cast(JsonWaterLevelMeasurement result) {
+            return result;
         }
     }
 
-    private class MeasurementsRequest<T> implements GetMeasurements<T> {
+    private abstract class MeasurementsRequest<T, J extends JsonMeasurement> implements GetMeasurements<T> {
         protected final URLEncodedFormData form = new URLEncodedFormData();
         private final Type JsonStationResultsArrayType;
 
-        public MeasurementsRequest(Type jsonStationResultsArrayType) {
-            JsonStationResultsArrayType = jsonStationResultsArrayType;
+        public MeasurementsRequest(Class<? extends List<JsonStationResults<J>>> jsonStationResultsArrayClass) {
+            JsonStationResultsArrayType = jsonStationResultsArrayClass.getGenericInterfaces()[0];
         }
 
         @Override
         public Iterator<T> exec() throws IOException, InterruptedException {
-            List<JsonStationResults<? extends JsonMeasurement>> stations = transform(streamService.get(form.getPath(), form.getFormData()));
+            List<JsonStationResults<J>> stations = fromJson(streamService.get(form.getPath(), form.getFormData()));
             if (stations.isEmpty()) return Collections.emptyIterator();
             if (stations.size() > 1) {
                 List<JsonStationId> ids = collectIds(stations);
                 log.debug("Multiple stations in response from {}: {}", form, ids);
             }
-            Stream<T> m = stations.stream().flatMap(this::denormalize);
+            Stream<T> m = stations.stream().flatMap(JsonStationResults::denormalize).map(this::cast);
             return m.iterator();
         }
 
-        @SuppressWarnings("unchecked")
-        private Stream<T> denormalize(JsonStationResults<? extends JsonMeasurement> stationResults) {
-            if (stationResults.results == null) return Stream.empty();
-            return stationResults.results.stream().map(r -> {
-                r.setStationId(stationResults.stationId);
-                r.setOperatorStationId(stationResults.operatorStationId);
-                return (T)r;
-            });
-        }
-
-        private List<JsonStationResults<? extends JsonMeasurement>> transform(InputStream body) throws IOException {
+        private List<JsonStationResults<J>> fromJson(InputStream body) throws IOException {
             WhitespaceObserver w = new WhitespaceObserver();
             if (body == null) {
                 return Collections.emptyList();
@@ -183,6 +177,8 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             }
             return ids;
         }
+
+        protected abstract T cast(J result);
 
         @Override
         public void stationId(String stationId) {
