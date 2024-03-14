@@ -67,7 +67,8 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            return fromJson(streamService.get(form.getPath(), form.getFormData())).iterator();
+            List<Station> stations = fromJson(streamService.get(form.getPath(), form.getFormData()), JsonStationArrayType);
+            return stations.iterator();
         }
 
         @Override
@@ -109,18 +110,6 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         public void withResultsCreatedAfter(OffsetDateTime pointInTime) {
             form.append("withResultsCreatedAfter", formatUTCRFC3339NoSeconds(pointInTime));
         }
-
-        private List<Station> fromJson(InputStream body) throws IOException {
-            WhitespaceObserver w = new WhitespaceObserver();
-            if (body == null) {
-                return Collections.emptyList();
-            } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
-                return jsonb.fromJson(is, JsonStationArrayType);
-            } catch (JsonbException e) {
-                if (w.hasObservedOnlyWhitespace()) return Collections.emptyList();
-                else throw new IOException("Cannot deserialize response body as JSON", e);
-            }
-        }
     }
 
     private class WaterLevelsRequest extends MeasurementsRequest<WaterLevelMeasurement, JsonWaterLevelMeasurement> implements GetWaterLevelsOperation {
@@ -145,7 +134,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public Iterator<T> exec() throws IOException, InterruptedException {
-            List<JsonStationResults<J>> stations = fromJson(streamService.get(form.getPath(), form.getFormData()));
+            List<JsonStationResults<J>> stations = fromJson(streamService.get(form.getPath(), form.getFormData()), JsonStationResultsArrayType);
             if (stations.isEmpty()) return Collections.emptyIterator();
             if (stations.size() > 1) {
                 List<JsonStationId> ids = collectIds(stations);
@@ -153,18 +142,6 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             }
             Stream<T> m = stations.stream().flatMap(JsonStationResults::denormalize).map(this::cast);
             return m.iterator();
-        }
-
-        private List<JsonStationResults<J>> fromJson(InputStream body) throws IOException {
-            WhitespaceObserver w = new WhitespaceObserver();
-            if (body == null) {
-                return Collections.emptyList();
-            } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
-                return jsonb.fromJson(is, JsonStationResultsArrayType);
-            } catch (JsonbException e) {
-                if (w.hasObservedOnlyWhitespace()) return Collections.emptyList();
-                else throw new IOException("Cannot deserialize response body as JSON", e);
-            }
         }
 
         private static List<JsonStationId> collectIds(List<? extends JsonStationResults<?>> stations) {
@@ -231,6 +208,18 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             .appendOffsetId()
             .parseStrict()
             .toFormatter();
+
+    private <T> List<T> fromJson(InputStream body, Type jsonType) throws IOException {
+        WhitespaceObserver w = new WhitespaceObserver();
+        if (body == null) {
+            return Collections.emptyList();
+        } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
+            return jsonb.fromJson(is, jsonType);
+        } catch (JsonbException e) {
+            if (w.hasObservedOnlyWhitespace()) return Collections.emptyList();
+            else throw new IOException("Cannot deserialize response body as JSON", e);
+        }
+    }
 
     /**
      * Poor man's check for empty input stream: works only for ASCII-like
