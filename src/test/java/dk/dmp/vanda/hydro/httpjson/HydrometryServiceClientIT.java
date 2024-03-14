@@ -1,6 +1,7 @@
 package dk.dmp.vanda.hydro.httpjson;
 
 import dk.dmp.vanda.hydro.HydrometryService;
+import dk.dmp.vanda.hydro.Measurement;
 import dk.dmp.vanda.hydro.Station;
 import dk.dmp.vanda.hydro.WaterLevelMeasurement;
 import org.junit.jupiter.api.AfterAll;
@@ -72,6 +73,20 @@ class HydrometryServiceClientIT {
         assertEquals("Vandstand", m1.parameter());
         WaterLevelMeasurement m2 = iter.next();
         assertEquals("cm", m2.unit());
+        assertThrows(NoSuchElementException.class, iter::next);
+    }
+
+    @Test
+    void testWaterFlows() throws Exception {
+        HydrometryService.GetWaterFlowsOperation op = service.getWaterFlows();
+        op.stationId("61000181");
+        op.from(OffsetDateTime.parse("2023-10-02T19:05+01:00"));
+        op.to(OffsetDateTime.parse("2023-10-02T19:10+01:00"));
+        Iterator<Measurement> iter = op.exec();
+        Measurement m1 = iter.next();
+        assertEquals("Vandføring", m1.parameter());
+        Measurement m2 = iter.next();
+        assertEquals("l/s", m2.unit());
         assertThrows(NoSuchElementException.class, iter::next);
     }
 }

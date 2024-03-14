@@ -1,6 +1,7 @@
 package dk.dmp.vanda.hydro.httpjson;
 
 import dk.dmp.vanda.hydro.HydrometryService;
+import dk.dmp.vanda.hydro.Measurement;
 import dk.dmp.vanda.hydro.Station;
 import dk.dmp.vanda.hydro.WaterLevelMeasurement;
 import jakarta.json.bind.Jsonb;
@@ -46,6 +47,11 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
     @Override
     public GetWaterLevelsOperation getWaterLevels() {
         return new WaterLevelsRequest();
+    }
+
+    @Override
+    public GetWaterFlowsOperation getWaterFlows() {
+        return new WaterFlowsRequest();
     }
 
     /**
@@ -120,6 +126,18 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         }
         @Override
         protected WaterLevelMeasurement cast(JsonWaterLevelMeasurement result) {
+            return result;
+        }
+    }
+
+    private class WaterFlowsRequest extends MeasurementsRequest<Measurement, JsonMeasurement> implements GetWaterFlowsOperation {
+        private interface JsonStationWaterFlowArray extends List<JsonStationResults<JsonMeasurement>>{}
+        public WaterFlowsRequest() {
+            super(JsonStationWaterFlowArray.class);
+            form.setPath("water-flows");
+        }
+        @Override
+        protected Measurement cast(JsonMeasurement result) {
             return result;
         }
     }

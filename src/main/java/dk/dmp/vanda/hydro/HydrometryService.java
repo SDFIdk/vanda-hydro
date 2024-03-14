@@ -21,6 +21,12 @@ public interface HydrometryService {
     GetWaterLevelsOperation getWaterLevels();
 
     /**
+     * Get water flow, a.k.a. discharge, measurements.
+     * @return a water-flows request builder.
+     */
+    GetWaterFlowsOperation getWaterFlows();
+
+    /**
      * Build a request for the {@link #getStations()} operation.
      */
     interface GetStationsOperation
@@ -79,6 +85,11 @@ public interface HydrometryService {
      * Request for the {@link #getWaterLevels()} operation.
      */
     interface GetWaterLevelsOperation extends GetMeasurements<WaterLevelMeasurement> {}
+
+    /**
+     * Request for the {@link #getWaterFlows()} operation.
+     */
+    interface GetWaterFlowsOperation extends GetMeasurements<Measurement> {}
 
     /**
      * {@linkplain #stationId(String) Station ID} or
