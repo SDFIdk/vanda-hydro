@@ -16,9 +16,6 @@ import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeFormatterBuilder;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -109,12 +106,12 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public void withResultsAfter(OffsetDateTime pointInTime) {
-            form.append("withResultsAfter", formatUTCRFC3339NoSeconds(pointInTime));
+            form.append("withResultsAfter", RFC3339NoSecondsFormatter.formatUTC(pointInTime));
         }
 
         @Override
         public void withResultsCreatedAfter(OffsetDateTime pointInTime) {
-            form.append("withResultsCreatedAfter", formatUTCRFC3339NoSeconds(pointInTime));
+            form.append("withResultsCreatedAfter", RFC3339NoSecondsFormatter.formatUTC(pointInTime));
         }
     }
 
@@ -192,40 +189,19 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public void from(OffsetDateTime pointInTime) {
-            form.append("from", formatUTCRFC3339NoSeconds(pointInTime));
+            form.append("from", RFC3339NoSecondsFormatter.formatUTC(pointInTime));
         }
 
         @Override
         public void to(OffsetDateTime pointInTime) {
-            form.append("to", formatUTCRFC3339NoSeconds(pointInTime));
+            form.append("to", RFC3339NoSecondsFormatter.formatUTC(pointInTime));
         }
 
         @Override
         public void createdAfter(OffsetDateTime pointInTime) {
-            form.append("createdAfter", formatUTCRFC3339NoSeconds(pointInTime));
+            form.append("createdAfter", RFC3339NoSecondsFormatter.formatUTC(pointInTime));
         }
     }
-
-    /**
-     * According to the OpenAPI specification of the service in test,
-     * all input timestamp arguments must be given as a UTC timestamps in
-     * the RFC 3339 date+time format without seconds.
-     */
-    private static String formatUTCRFC3339NoSeconds(OffsetDateTime t) {
-        return t.atZoneSameInstant(ZoneOffset.UTC).format(RFC_3339_NO_SECONDS);
-    }
-    private static final DateTimeFormatter RFC_3339_NO_SECONDS =
-        new DateTimeFormatterBuilder()
-            .parseCaseInsensitive()
-            .append(DateTimeFormatter.ISO_LOCAL_DATE)
-            .appendLiteral('T')
-            .appendValue(java.time.temporal.ChronoField.HOUR_OF_DAY, 2)
-            .appendLiteral(':')
-            .appendValue(java.time.temporal.ChronoField.MINUTE_OF_HOUR, 2)
-            .parseLenient()
-            .appendOffsetId()
-            .parseStrict()
-            .toFormatter();
 
     private <T> List<T> fromJson(InputStream body, Type jsonType) throws IOException {
         WhitespaceObserver w = new WhitespaceObserver();
