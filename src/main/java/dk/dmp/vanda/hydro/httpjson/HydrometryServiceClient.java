@@ -4,29 +4,25 @@ import dk.dmp.vanda.hydro.HydrometryService;
 import dk.dmp.vanda.hydro.Measurement;
 import dk.dmp.vanda.hydro.Station;
 import dk.dmp.vanda.hydro.WaterLevelMeasurement;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
-import jakarta.json.bind.JsonbException;
-import org.apache.commons.io.input.ObservableInputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.invoke.MethodHandles;
-import java.lang.reflect.Type;
 import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Stream;
 
 /**
- * The implementation is immutable, thus thread-safe.
+ * A VanDa Hydro service client that expects data to be returned as JSON.
+ * All the methods in this class are safe for use by multiple concurrent threads.
  * However, the operations builders are not.
  */
 public class HydrometryServiceClient implements HydrometryService, AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-    private final Jsonb jsonb = JsonbBuilder.create();
     private final StreamService streamService;
+    private final Deserializer deserializer = new Deserializer();
 
     /**
      * Construct the service client.
@@ -57,12 +53,10 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
      */
     @Override
     public void close() throws Exception {
-        jsonb.close();
+        deserializer.close();
     }
 
     private class StationsRequest implements GetStationsOperation {
-        private interface JsonStationArray extends List<JsonStation> {}
-        private static final Type JsonStationArrayType = JsonStationArray.class.getGenericInterfaces()[0];
         private final URLEncodedFormData form = new URLEncodedFormData();
         {
             form.setPath("stations");
@@ -70,7 +64,7 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
         @Override
         public Iterator<Station> exec() throws IOException, InterruptedException {
-            List<Station> stations = fromJson(streamService.get(form.getPath(), form.getFormData()), JsonStationArrayType);
+            List<Station> stations = deserializer.deserializeStations(streamService.get(form.getPath(), form.getFormData()));
             return stations.iterator();
         }
 
@@ -116,11 +110,15 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
     }
 
     private class WaterLevelsRequest extends MeasurementsRequest<WaterLevelMeasurement, JsonWaterLevelMeasurement> implements GetWaterLevelsOperation {
-        private interface JsonStationWaterLevelArray extends List<JsonStationResults<JsonWaterLevelMeasurement>>{}
-        public WaterLevelsRequest() {
-            super(JsonStationWaterLevelArray.class);
+        {
             form.setPath("water-levels");
         }
+
+        @Override
+        protected List<JsonStationResults<JsonWaterLevelMeasurement>> deserialize(InputStream body) throws IOException {
+            return deserializer.deserializeWaterLevels(body);
+        }
+
         @Override
         protected WaterLevelMeasurement cast(JsonWaterLevelMeasurement result) {
             return result;
@@ -128,11 +126,15 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
     }
 
     private class WaterFlowsRequest extends MeasurementsRequest<Measurement, JsonMeasurement> implements GetWaterFlowsOperation {
-        private interface JsonStationWaterFlowArray extends List<JsonStationResults<JsonMeasurement>>{}
-        public WaterFlowsRequest() {
-            super(JsonStationWaterFlowArray.class);
+        {
             form.setPath("water-flows");
         }
+
+        @Override
+        protected List<JsonStationResults<JsonMeasurement>> deserialize(InputStream body) throws IOException {
+            return deserializer.deserializeWaterFlows(body);
+        }
+
         @Override
         protected Measurement cast(JsonMeasurement result) {
             return result;
@@ -141,15 +143,10 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
 
     private abstract class MeasurementsRequest<T, J extends JsonMeasurement> implements GetMeasurements<T> {
         protected final URLEncodedFormData form = new URLEncodedFormData();
-        private final Type JsonStationResultsArrayType;
-
-        public MeasurementsRequest(Class<? extends List<JsonStationResults<J>>> jsonStationResultsArrayClass) {
-            JsonStationResultsArrayType = jsonStationResultsArrayClass.getGenericInterfaces()[0];
-        }
 
         @Override
         public Iterator<T> exec() throws IOException, InterruptedException {
-            List<JsonStationResults<J>> stations = fromJson(streamService.get(form.getPath(), form.getFormData()), JsonStationResultsArrayType);
+            List<JsonStationResults<J>> stations = deserialize(streamService.get(form.getPath(), form.getFormData()));
             if (stations.isEmpty()) return Collections.emptyIterator();
             if (stations.size() > 1) {
                 List<JsonStationId> ids = collectIds(stations);
@@ -158,6 +155,8 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
             Stream<T> m = stations.stream().flatMap(JsonStationResults::denormalize).map(this::cast);
             return m.iterator();
         }
+
+        protected abstract List<JsonStationResults<J>> deserialize(InputStream body) throws IOException;
 
         private static List<JsonStationId> collectIds(List<? extends JsonStationResults<?>> stations) {
             List<JsonStationId> ids = new LinkedList<>();
@@ -200,41 +199,6 @@ public class HydrometryServiceClient implements HydrometryService, AutoCloseable
         @Override
         public void createdAfter(OffsetDateTime pointInTime) {
             form.append("createdAfter", RFC3339NoSecondsFormatter.formatUTC(pointInTime));
-        }
-    }
-
-    private <T> List<T> fromJson(InputStream body, Type jsonType) throws IOException {
-        WhitespaceObserver w = new WhitespaceObserver();
-        if (body == null) {
-            return Collections.emptyList();
-        } else try (ObservableInputStream is = new ObservableInputStream(body, w)) {
-            return jsonb.fromJson(is, jsonType);
-        } catch (JsonbException e) {
-            if (w.hasObservedOnlyWhitespace()) return Collections.emptyList();
-            else throw new IOException("Cannot deserialize response body as JSON", e);
-        }
-    }
-
-    /**
-     * Poor man's check for empty input stream: works only for ASCII-like
-     * encodings, e.g. UTF-8.
-     */
-    private static class WhitespaceObserver extends ObservableInputStream.Observer {
-        private boolean observedOnlyWhitespace = true;
-
-        public boolean hasObservedOnlyWhitespace() {
-            return observedOnlyWhitespace;
-        }
-
-        @Override
-        public void data(byte[] buffer, int offset, int length) {
-            for (int i = offset, n = length; observedOnlyWhitespace && n > 0; ++i, --n)
-                data(buffer[i]);
-        }
-
-        @Override
-        public void data(int value) {
-            if (observedOnlyWhitespace && !Character.isWhitespace(value)) observedOnlyWhitespace = false;
         }
     }
 }
